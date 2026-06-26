@@ -85,8 +85,8 @@
       <div class="wolfLine">늑대 <span id="hWolves">0</span></div>
     </div>
     <div id="chips">
-      <span class="chip sling" id="hSling">슬링 1발·1</span>
-      <span class="chip stones" id="hStones">돌 30</span>
+      <span class="chip sling" id="hSling">슬링 1발·10</span>
+      <span class="chip stones" id="hStones">돌 10</span>
       <span class="chip shield" id="hShield" style="display:none">보호막 0</span>
     </div>
     <div id="comboBadge" class="hidden"></div>
@@ -126,10 +126,10 @@
 // ----------------------------- DATA ---------------------------------
 const DATA = {
   level: { name:"양치기들의 들판", length:13000, runSpeed:170, speedRamp:0.9, initialSheep:8,
-    stats:{hp:5,maxHp:5,slingProjectiles:1,slingDamage:10,slingCooldown:0.5,staffDamage:10,staffRange:58,staffCooldown:0.45,stones:30,stoneRegen:2.4,stoneMax:60},
+    stats:{hp:5,maxHp:5,slingProjectiles:1,slingDamage:10,slingCooldown:0.5,staffDamage:10,staffRange:58,staffCooldown:0.45,stones:10,stoneRegen:1.1,stoneMax:40},
     boss:{y:13000} },
   // Base damage is 10; enemy HP/threat scaled to match so growth stays bounded.
-  wolf:{hp:30,damage:1,radius:13,contact:30}, bear:{hp:680,radius:44,moveSpeed:80,approach:52,charge:340,chargeCD:1.7,windup:0.5,contact:60,dmg:1,sheepHit:2,armor:0.4},
+  wolf:{hp:30,damage:1,radius:13,contact:30}, bear:{hp:1050,radius:44,moveSpeed:92,approach:62,charge:380,chargeCD:1.35,windup:0.45,contact:60,dmg:2,sheepHit:2,armor:0.42},
   rewards:{base:{coins:50,chapter_points:1,unlock_tokens:0},perStar:{coins:25,chapter_points:1},three:{coins:50,unlock_tokens:1},perWolf:{coins:3},perSheep:{coins:2}},
   rewardLabel:{coins:'코인',chapter_points:'챕터 포인트',unlock_tokens:'해금 토큰'},
   achievements:[ {id:'save_10_sheep',label:'양 10마리 지키기',c:s=>s.sheepSaved>=10},{id:'defeat_30_wolves',label:'늑대 30마리 처치',c:s=>s.wolves>=30},
@@ -143,12 +143,12 @@ const DATA = {
 // a bigger upside. fx may be a single effect or an array of effects.
 const GATE_POOL = [
   // 슬링(원거리) — 기본 데미지 10 기준, 가산 위주
-  {id:'sling_proj',  label:'슬링 발사 +1',    tone:'pos', cat:'sling', w:7, fx:{t:'slingProjectiles',op:'add',v:1}},
+  {id:'sling_proj',  label:'슬링 투사체 +1',  tone:'pos', cat:'sling', w:7, fx:{t:'slingProjectiles',op:'add',v:1}},
   {id:'sling_dmg3',  label:'슬링 데미지 +3',  tone:'pos', cat:'sling', w:9, fx:{t:'slingDamage',op:'add',v:3}},
   {id:'sling_dmg6',  label:'슬링 데미지 +6',  tone:'pos', cat:'sling', w:5, fx:{t:'slingDamage',op:'add',v:6}},
   {id:'sling_rate',  label:'연사 속도 +15%',  tone:'pos', cat:'sling', w:6, fx:{t:'slingCooldown',op:'mul',v:0.85}},
   // 돌(탄약)
-  {id:'stone_add',   label:'돌 +15',          tone:'pos', cat:'econ',  w:7, fx:{t:'stones',op:'add',v:15}},
+  {id:'stone_add',   label:'돌 +12개',        tone:'pos', cat:'econ',  w:7, fx:{t:'stones',op:'add',v:12}},
   {id:'stone_regen', label:'돌 보충 +40%',    tone:'pos', cat:'econ',  w:6, fx:{t:'stoneRegen',op:'mul',v:1.4}},
   // 지팡이(근접)
   {id:'staff_dmg3',  label:'지팡이 데미지 +3',tone:'pos', cat:'staff', w:7, fx:{t:'staffDamage',op:'add',v:3}},
@@ -161,7 +161,7 @@ const GATE_POOL = [
   {id:'heal',        label:'체력 회복 +1',    tone:'pos', cat:'flock', w:3, fx:{t:'hp',op:'addHp',v:1}},
   // 위험/거래 게이트 (손해 + 더 큰 이득, 가산형)
   {id:'risk_sheep_dmg', label:'양 -2 · 슬링 +9',  tone:'neg', cat:'risk', w:4, fx:[{t:'sheep',op:'add',v:-2},{t:'slingDamage',op:'add',v:9}]},
-  {id:'risk_stone_proj',label:'돌 -12 · 발사 +1', tone:'neg', cat:'risk', w:4, fx:[{t:'stones',op:'add',v:-12},{t:'slingProjectiles',op:'add',v:1}]},
+  {id:'risk_stone_proj',label:'돌 -8개 · 투사체 +1', tone:'neg', cat:'risk', w:4, fx:[{t:'stones',op:'add',v:-8},{t:'slingProjectiles',op:'add',v:1}]},
   {id:'risk_mud_dmg',   label:'진흙 · 데미지 +10',tone:'neg', cat:'risk', w:3, fx:[{t:'mud',op:'special',v:0.6,d:2.5},{t:'slingDamage',op:'add',v:10}]},
 ];
 
@@ -169,7 +169,7 @@ const GATE_POOL = [
 const ELITE_DROPS = [
   {label:'슬링 데미지 +2', fx:{t:'slingDamage',op:'add',v:2}},
   {label:'지팡이 데미지 +2', fx:{t:'staffDamage',op:'add',v:2}},
-  {label:'돌 +10',         fx:{t:'stones',op:'add',v:10}},
+  {label:'돌 +10개',       fx:{t:'stones',op:'add',v:10}},
   {label:'양 +1',          fx:{t:'sheep',op:'add',v:1}},
   {label:'보호막 +1',      fx:{t:'shield',op:'special',v:1}},
   {label:'연사 속도 +10%', fx:{t:'slingCooldown',op:'mul',v:0.9}},
@@ -199,6 +199,7 @@ const A={ctx:null,master:null,muted:false,
   gateBad(){this.tone(150,.25,'sawtooth',.36,80);}, bossHit(){this.tone(160,.09,'square',.32,110);},
   roar(){this.tone(110,.5,'sawtooth',.5,60);this.noise(.4,.22);}, charge(){this.tone(440,.3,'sawtooth',.28,880);},
   sheepUp(){[784,1046].forEach((f,i)=>setTimeout(()=>this.tone(f,.1,'sine',.28),i*60));},
+  stone(){this.tone(1040,.05,'triangle',.2,1500);this.tone(720,.06,'sine',.14,520);},
   win(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>this.tone(f,.2,'triangle',.42),i*120));},
   lose(){[400,330,260,180].forEach((f,i)=>setTimeout(()=>this.tone(f,.22,'sawtooth',.4),i*130));},
 };
@@ -237,6 +238,9 @@ class Shot{constructor(x,y,dmg){this.x=x;this.worldY=y;this.dmg=dmg;this.life=1.
   // Flies straight forward only — the player must line up left/right to aim.
   update(dt){this.worldY+=660*dt;this.life-=dt;if(this.life<=0)this.alive=false;}}
 class Gate{constructor(y,l,r){this.worldY=y;this.l=l;this.r=r;this.alive=true;this.used=false;}}
+// Collectible stone pile — steer onto it to top up ammo.
+class StonePickup{constructor(x,y,v){this.x=x;this.worldY=y;this.v=v;this.alive=true;this.bob=Math.random()*7;}
+  update(dt){this.bob+=dt*4;}}
 
 // --------------------------- RUN STATE -------------------------------
 class RunState{constructor(){const s=DATA.level.stats;Object.assign(this,{hp:s.hp,maxHp:s.maxHp,initialSheep:DATA.level.initialSheep,sheep:DATA.level.initialSheep,sheepLost:0,
@@ -271,9 +275,9 @@ class Game{
     this.canvas.style.width=w+'px';this.canvas.style.height=h+'px';this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);this.scale=(w*dpr)/VW;}
   toV(cx,cy){const r=this.canvas.getBoundingClientRect();return{x:(cx-r.left)/r.width*VW,y:(cy-r.top)/r.height*VH};}
 
-  initRun(){this.rs=new RunState();this.player=new Player(VW/2,this.rs);this.sheep=[];this.wolves=[];this.shots=[];this.gates=[];this.boss=null;this.result=null;
-    this.gatePlan=this.genGatePlan();this.enemyPlan=this.genEnemyPlan();
-    this.spawned={gate:this.gatePlan.map(()=>false),enemy:this.enemyPlan.map(()=>false),boss:false};this.slingT=0;this.staffT=0;this.floaters=[];this.particles.l.length=0;
+  initRun(){this.rs=new RunState();this.player=new Player(VW/2,this.rs);this.sheep=[];this.wolves=[];this.shots=[];this.gates=[];this.stonePickups=[];this.boss=null;this.result=null;
+    this.gatePlan=this.genGatePlan();this.enemyPlan=this.genEnemyPlan();this.stonePlan=this.genStonePlan();
+    this.spawned={gate:this.gatePlan.map(()=>false),enemy:this.enemyPlan.map(()=>false),stone:this.stonePlan.map(()=>false),boss:false};this.slingT=0;this.staffT=0;this.floaters=[];this.particles.l.length=0;
     for(let i=0;i<this.rs.initialSheep;i++){const s=this.slot(i);this.sheep.push(new Sheep(s.x,s.y));}}
 
   // Roguelike: random balanced gate pairs along the whole level.
@@ -291,6 +295,9 @@ class Game{
       const elite=y>1700&&Math.random()<0.15; // tanky, threatening guards
       for(let k=0;k<pack;k++)plan.push({y:y+k*46,x:0.18+Math.random()*0.64,hp:elite?Math.round(baseHp*3.2):baseHp,elite});
       y+=rnd(330,580);}return plan;}
+  // Collectible stone piles scattered down the field; player must steer onto them.
+  genStonePlan(){const plan=[],bossY=DATA.level.boss.y;let y=520;
+    while(y<bossY-300){plan.push({y,x:(0.16+Math.random()*0.68)*VW,v:3});y+=rnd(270,460);}return plan;}
   start(){this.audio.init();this.audio.resume();this.initRun();this.rs.status='running';this.dom.start.classList.add('hidden');this.dom.start.classList.remove('show');
     this.dom.result.classList.add('hidden');this.dom.result.classList.remove('show');this.dom.hud.classList.remove('hidden');}
   shake(m,t){this.shakeMag=Math.max(this.shakeMag,m);this.shakeT=Math.max(this.shakeT,t);}
@@ -322,23 +329,29 @@ class Game{
     while(this.sheep.length>want&&this.sheep.length>0)this.sheep.pop();
     for(let i=0;i<this.sheep.length;i++){const s=this.slot(i);this.sheep[i].set(s.x,s.y);this.sheep[i].update(dt);}
     for(const w of this.wolves)w.update(dt,this);
+    for(const s of this.stonePickups)s.update(dt);
     if(this.boss)this.boss.update(dt,this);
     this.combat(dt);this.collisions();
-    this.wolves=this.wolves.filter(w=>w.alive);this.shots=this.shots.filter(s=>s.alive);this.gates=this.gates.filter(g=>g.alive);
+    this.wolves=this.wolves.filter(w=>w.alive);this.shots=this.shots.filter(s=>s.alive);this.gates=this.gates.filter(g=>g.alive);this.stonePickups=this.stonePickups.filter(s=>s.alive);
     if(st!=='win'&&st!=='fail'&&this.rs.hp<=0)this.finish(false);
     this.updateHUD();}
 
   spawnStuff(){const pr=this.rs.progress,look=820,L=DATA.level;
     this.gatePlan.forEach((g,i)=>{if(!this.spawned.gate[i]&&pr>g.y-look){this.spawned.gate[i]=true;this.gates.push(new Gate(g.y,g.left,g.right));}});
     this.enemyPlan.forEach((e,i)=>{if(!this.spawned.enemy[i]&&pr>e.y-look){this.spawned.enemy[i]=true;this.wolves.push(new Wolf(e.x*VW,e.y,e.hp,e.elite));}});
+    this.stonePlan.forEach((s,i)=>{if(!this.spawned.stone[i]&&pr>s.y-look){this.spawned.stone[i]=true;this.stonePickups.push(new StonePickup(s.x,s.y,s.v));}});
     if(!this.spawned.boss&&pr>=L.boss.y-200){this.spawned.boss=true;this.boss=new Boss(VW/2,this.player.worldY+330);this.rs.status='boss';this.audio.roar();this.shake(8,.4);this.flash('rgba(120,40,20,.4)',.3);}}
 
   combat(dt){const rs=this.rs;if(this.slingT>0)this.slingT-=dt;if(this.staffT>0)this.staffT-=dt;
-    if(this.slingT<=0&&rs.stones>=1){const t=this.nearest();if(t){this.slingT=rs.slingCooldown;rs.stones-=1;this.audio.sling();
-      // More projectiles => each does less, but total still rises (≈ n^0.35),
-      // i.e. per-shot damage drops a little slower than 1/n.
-      const n=rs.slingProjectiles,step=20,sx=this.player.x-((n-1)*step)/2,pd=rs.slingDamage*Math.pow(n,-0.65);
-      for(let i=0;i<n;i++){const px=sx+i*step;this.shots.push(new Shot(px,this.player.worldY+18,pd));}}}
+    if(this.slingT<=0&&rs.stones>=1){const t=this.nearest();if(t){
+      // Each projectile costs one stone. Low on stones => fire fewer this volley,
+      // so a wide build literally runs the ammo dry and firing thins out.
+      const n=rs.slingProjectiles,fire=Math.min(n,Math.floor(rs.stones));
+      if(fire>=1){this.slingT=rs.slingCooldown;rs.stones-=fire;this.audio.sling();
+        // Per-shot damage is flat; the projectile/damage trade-off is baked into
+        // slingDamage at the moment a projectile is gained (see applyFx).
+        const step=20,sx=this.player.x-((fire-1)*step)/2,pd=rs.slingDamage;
+        for(let i=0;i<fire;i++){const px=sx+i*step;this.shots.push(new Shot(px,this.player.worldY+18,pd));}}}}
     if(this.staffT<=0){let hit=false;const px=this.player.x,py=this.player.worldY,rg=rs.staffRange;
       for(const w of this.wolves){if(w.alive&&dist(px,py,w.x,w.worldY)<=rg+w.d.radius){if(w.hurt(rs.staffDamage))this.onWolfKill(w);else this.audio.hit();hit=true;this.fxAt(w.x,0.5,this.wz3(w.worldY),5,'#fff2c4');}}
       if(this.boss&&this.boss.alive&&dist(px,py,this.boss.x,this.boss.worldY)<=rg+this.boss.d.radius){if(this.boss.hurt(rs.staffDamage))this.onBossKill();else this.audio.bossHit();hit=true;this.fxAt(this.boss.x,1,this.wz3(this.boss.worldY),6,'#ffd9b0');this._dmg('-'+Math.round(rs.staffDamage),this.boss.x,this.boss.worldY);}
@@ -358,10 +371,14 @@ class Game{
       const dmg=w.elite?2:1; // enemies damage HP only; sheep are a separate objective
       if(this.rs.shield>0){this.rs.shield-=1;this.floater('막음!',this.wx3(p.x),2,0,'#9cdcff');}
       else{this.rs.hp-=dmg;this.player.hurt=.4;this._dmg('체력 -'+dmg,p.x,p.worldY);this.flash('rgba(200,40,40,.45)',.25);this.shake(w.elite?7:5,.2);this.audio.hit();}}else if(w.worldY<p.worldY-80)w.alive=false;}
+    for(const s of this.stonePickups){if(!s.alive)continue;
+      if(s.worldY<p.worldY-80){s.alive=false;continue;}
+      if(Math.abs(s.worldY-p.worldY)<=24&&Math.abs(s.x-p.x)<=46){s.alive=false;this.rs.stones+=s.v;this.rs.stonesCollected+=s.v;
+        this.floater('돌 +'+s.v+'개',this.wx3(s.x),0.85,this.wz3(s.worldY),'#ffe49a');this.fxAt(s.x,0.35,this.wz3(s.worldY),12,'#ffe06a',{spMax:170,up:40});this.audio.stone();}}
     const b=this.boss;if(b&&b.alive&&b.cc<=0&&dist(b.x,b.worldY,p.x,p.worldY)<=b.d.contact){b.cc=.9;
       if(this.rs.shield>0){this.rs.shield-=1;this.floater('막음!',this.wx3(p.x),2,0,'#9cdcff');}else{this.rs.hp-=b.d.dmg;this.player.hurt=.5;this._dmg('체력 -'+b.d.dmg,p.x,p.worldY);this.flash('rgba(200,40,40,.55)',.3);this.shake(11,.35);this.audio.hit();this.fxAt(p.x,.6,0,12,'#ff6a4a');}}}
 
-  applyFx(fx){const rs=this.rs,fxs=Array.isArray(fx)?fx:[fx];let sheepUp=false;
+  applyFx(fx){const rs=this.rs,fxs=Array.isArray(fx)?fx:[fx];let sheepUp=false;const projBefore=rs.slingProjectiles;
     for(const f of fxs){
       if(f.op==='add'){if(f.t==='sheep'){rs.changeSheep(f.v);if(f.v>0)sheepUp=true;}else if(f.t==='stones'){rs.stones=Math.max(0,rs.stones+f.v);if(f.v>0)rs.stonesCollected+=f.v;}else rs[f.t]+=f.v;}
       else if(f.op==='mul')rs[f.t]*=f.v;
@@ -369,6 +386,8 @@ class Game{
       else if(f.op==='special'){if(f.t==='shield')rs.shield+=f.v;else if(f.t==='mud')rs.mud(f.v,f.d);}
     }
     rs.slingProjectiles=Math.min(5,rs.slingProjectiles);rs.slingCooldown=Math.max(0.3,rs.slingCooldown);
+    // Gaining a projectile ALWAYS lowers per-shot damage at the same time.
+    const projGain=rs.slingProjectiles-projBefore;if(projGain>0)rs.slingDamage=Math.max(2,rs.slingDamage*Math.pow(0.7,projGain));
     return sheepUp;}
   applyGate(g){const sheepUp=this.applyFx(g.fx);
     const col=g.tone==='neg'?'#ffcf6a':'#bff0a0';const pp=this.project(0,2.1,0.15);if(pp)this.floaters.push({x:pp.x,y:pp.y,txt:g.label,life:1.2,max:1.2,col});
@@ -409,7 +428,7 @@ class Game{
   updateHUD(){const rs=this.rs,d=this.dom;
     d.hp.innerHTML='<span class="heartOn">'+'♥'.repeat(Math.max(0,rs.hp))+'</span><span class="heartOff">'+'♥'.repeat(Math.max(0,rs.maxHp-rs.hp))+'</span>';
     d.sheep.textContent=rs.sheep;d.sheepMax.textContent=' / '+rs.initialSheep;
-    d.sling.textContent='슬링 '+rs.slingProjectiles+'발·'+rs.slingDamage;d.stones.textContent='돌 '+Math.floor(rs.stones);
+    d.sling.textContent='슬링 '+rs.slingProjectiles+'발·'+Math.round(rs.slingDamage);d.stones.textContent='돌 '+Math.floor(rs.stones);
     if(rs.shield>0){d.shield.style.display='';d.shield.textContent='보호막 '+rs.shield;}else d.shield.style.display='none';
     d.wolves.textContent=rs.wolves;d.score.textContent=rs.score;
     const pct=Math.min(100,rs.progress/DATA.level.length*100);d.prog.style.width=pct+'%';d.progBear.style.left=pct+'%';
@@ -428,6 +447,7 @@ class Game{
     for(const s of this.sheep)items.push({z:s.worldY-this.player.worldY,k:'sheep',o:s});
     for(const w of this.wolves)items.push({z:w.worldY-this.player.worldY,k:'wolf',o:w});
     for(const s of this.shots)items.push({z:s.worldY-this.player.worldY,k:'shot',o:s});
+    for(const s of this.stonePickups)items.push({z:s.worldY-this.player.worldY,k:'stone',o:s});
     if(this.boss)items.push({z:this.boss.worldY-this.player.worldY,k:'boss',o:this.boss});
     items.push({z:0,k:'player',o:this.player});
     items.sort((a,b)=>b.z-a.z);
@@ -537,6 +557,13 @@ class Game{
     // big HP number above the bear
     this.hpTag(ctx,X,2.12,Z,b.hp,b.maxHp,true);}
   draw_shot(ctx,s){const p=this.project(this.wx3(s.x),0.7,this.wz3(s.worldY));if(!p)return;const r=Math.max(2,0.09*p.scale);ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.arc(p.x,p.y,r,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(p.x-r*0.3,p.y-r*0.3,r*0.4,0,7);ctx.fill();}
+  draw_stone(ctx,s){const X=this.wx3(s.x),Z=this.wz3(s.worldY),bob=Math.sin(s.bob)*0.04;this.shadow(ctx,X,Z,0.2);
+    // soft glow ring so collectible piles read differently from scenery rocks
+    const gp=this.project(X,0.1,Z);if(gp){ctx.save();ctx.globalAlpha=.45+.3*Math.sin(s.bob*1.4);const rg=ctx.createRadialGradient(gp.x,gp.y,1,gp.x,gp.y,Math.max(6,0.42*gp.scale));rg.addColorStop(0,'rgba(255,224,120,.7)');rg.addColorStop(1,'rgba(255,224,120,0)');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(gp.x,gp.y,Math.max(6,0.42*gp.scale),0,7);ctx.fill();ctx.restore();}
+    this.part(ctx,X-0.12,0.12+bob,Z,0.1,'#8a8580','#cfcabf');
+    this.part(ctx,X+0.12,0.11+bob,Z+0.05,0.09,'#7d7a74','#c2bdb2');
+    this.part(ctx,X,0.18+bob,Z-0.03,0.12,'#9a958d','#e3ddcf');
+    const sp=this.project(X,0.36+bob,Z);if(sp){ctx.fillStyle='#fff6c8';ctx.font='900 '+Math.max(9,0.3*sp.scale)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=3;ctx.fillText('✦',sp.x,sp.y);ctx.shadowBlur=0;}}
   draw_gate(ctx,g){const Z=this.wz3(g.worldY);if(Z<0.05)return;this.gatePanel(ctx,-TRACK_HALF,0,Z,g.l);this.gatePanel(ctx,0,TRACK_HALF,Z,g.r);}
   gatePanel(ctx,x0,x1,Z,gate){const TOP=1.18;const a=this.project(x0,0,Z),b=this.project(x1,0,Z),c=this.project(x1,TOP,Z),d=this.project(x0,TOP,Z);if(!a||!b||!c||!d)return;
     const pos=gate.tone==='pos';ctx.save();
