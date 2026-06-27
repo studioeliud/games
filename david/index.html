@@ -117,6 +117,8 @@
     border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
   #shopCard h2{font-size:22px;color:#fff;}
   .walletHdr{font-size:15px;color:#ffe7a0;margin:6px 0 12px;}
+  /* achievements/shop sit above the pause menu when opened mid-pause */
+  #achScreen,#shopScreen{z-index:40;}
   .shopBody{width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:7px;}
   .shopSec{font-size:13px;font-weight:800;color:#a0d8ff;letter-spacing:.04em;margin:8px 2px 2px;text-align:left;}
   .shopSec .dim{font-weight:600;color:#7f8a86;font-size:11px;}
@@ -203,6 +205,8 @@
       <div class="swatchRow" id="pauseSwatches"></div>
       <button id="fxBtn" class="fxToggle">✨ 이펙트: 가득</button>
       <button class="play" id="resumeBtn" style="margin-top:16px">계속하기</button>
+      <div class="btnRow" style="margin-top:10px"><button id="pauseAchBtn" class="fxToggle">🏅 업적</button><button id="pauseShopBtn" class="fxToggle">🛖 상점</button></div>
+      <button id="pauseMenuBtn" class="fxToggle" style="margin-top:10px">🏠 메뉴로 나가기</button>
     </div>
   </div>
 
@@ -258,18 +262,18 @@ const bear=(o)=>Object.assign({},BEAR_BASE,o);
 const REVIEW_UNLOCK_ALL = true;
 // A stage = one biome (palette) + balance. Add a stage = add one entry here.
 const STAGES = [
-  { id:'fields', name:'양치기들의 들판', palette:'midday', length:11000, runSpeed:165, speedRamp:0.8, initialSheep:8,
-    spawn:{gapMin:360,gapMax:620,packChance:0.28,hpBase:12,hpRamp:120,eliteAfterY:2000,eliteRate:0.10,stoneGapMin:280,stoneGapMax:460},
-    boss:bear({hp:900,label:'곰'}), stars:BASE_STARS, rewardMult:1.0 },
-  { id:'barley', name:'황금빛 보리밭', palette:'golden_hour', length:13000, runSpeed:175, speedRamp:0.9, initialSheep:8,
-    spawn:{gapMin:330,gapMax:560,packChance:0.34,hpBase:16,hpRamp:150,eliteAfterY:1600,eliteRate:0.15,stoneGapMin:270,stoneGapMax:450},
-    boss:bear({hp:1100,label:'성난 곰'}), stars:BASE_STARS, rewardMult:1.2 },
-  { id:'moor', name:'폭풍 전의 황야', palette:'overcast', length:14500, runSpeed:185, speedRamp:1.0, initialSheep:7,
-    spawn:{gapMin:300,gapMax:520,packChance:0.40,hpBase:20,hpRamp:180,eliteAfterY:1400,eliteRate:0.20,stoneGapMin:260,stoneGapMax:440},
-    boss:bear({hp:1300,chargeCD:1.2,label:'잿빛 곰',col:{base:'#5a5550',lite:'#9a948c'}}), stars:BASE_STARS, rewardMult:1.45 },
-  { id:'vale', name:'달빛 골짜기', palette:'dusk', length:16000, runSpeed:195, speedRamp:1.1, initialSheep:7,
-    spawn:{gapMin:280,gapMax:480,packChance:0.45,hpBase:24,hpRamp:210,eliteAfterY:1100,eliteRate:0.26,stoneGapMin:250,stoneGapMax:430},
-    boss:bear({hp:1500,chargeCD:1.1,moveSpeed:104,label:'그림자 곰',col:{base:'#2e2a40',lite:'#6a6488'}}), stars:BASE_STARS, rewardMult:1.7 },
+  { id:'fields', name:'양치기들의 들판', palette:'midday', length:11000, runSpeed:160, speedRamp:0.7, initialSheep:8,
+    spawn:{gapMin:380,gapMax:640,packChance:0.24,hpBase:10,hpRamp:78,eliteAfterY:2200,eliteRate:0.08,stoneGapMin:280,stoneGapMax:460},
+    boss:bear({hp:760,label:'곰'}), stars:BASE_STARS, rewardMult:1.0 },
+  { id:'barley', name:'황금빛 보리밭', palette:'golden_hour', length:13000, runSpeed:168, speedRamp:0.8, initialSheep:8,
+    spawn:{gapMin:350,gapMax:580,packChance:0.30,hpBase:13,hpRamp:100,eliteAfterY:1800,eliteRate:0.12,stoneGapMin:270,stoneGapMax:450},
+    boss:bear({hp:900,label:'성난 곰'}), stars:BASE_STARS, rewardMult:1.2 },
+  { id:'moor', name:'폭풍 전의 황야', palette:'overcast', length:14500, runSpeed:176, speedRamp:0.9, initialSheep:7,
+    spawn:{gapMin:330,gapMax:560,packChance:0.35,hpBase:16,hpRamp:128,eliteAfterY:1500,eliteRate:0.16,stoneGapMin:260,stoneGapMax:440},
+    boss:bear({hp:1060,chargeCD:1.25,label:'잿빛 곰',col:{base:'#5a5550',lite:'#9a948c'}}), stars:BASE_STARS, rewardMult:1.45 },
+  { id:'vale', name:'달빛 골짜기', palette:'dusk', length:16000, runSpeed:184, speedRamp:1.0, initialSheep:7,
+    spawn:{gapMin:310,gapMax:520,packChance:0.40,hpBase:19,hpRamp:158,eliteAfterY:1200,eliteRate:0.20,stoneGapMin:250,stoneGapMax:430},
+    boss:bear({hp:1240,chargeCD:1.15,moveSpeed:100,label:'그림자 곰',col:{base:'#2e2a40',lite:'#6a6488'}}), stars:BASE_STARS, rewardMult:1.7 },
 ];
 
 // --------------------------- META / SHOP -----------------------------
@@ -533,6 +537,9 @@ class Game{
     const mb=document.getElementById('menuBtn');if(mb)mb.addEventListener('click',()=>this.toTitle());
     const shb=document.getElementById('shopBtn');if(shb)shb.addEventListener('click',()=>this.openShop());
     const shc=document.getElementById('shopClose');if(shc)shc.addEventListener('click',()=>this.closeShop());
+    const pa=document.getElementById('pauseAchBtn');if(pa)pa.addEventListener('click',()=>this.openAch());
+    const ps=document.getElementById('pauseShopBtn');if(ps)ps.addEventListener('click',()=>this.openShop());
+    const pm=document.getElementById('pauseMenuBtn');if(pm)pm.addEventListener('click',()=>this.pauseToMenu());
     this.buildPaletteUI();this.buildStageUI();this.updateWallet();
     if(this.best>0)this.dom.best.textContent='최고 점수: '+this.best;
     this.initRun();}
@@ -625,12 +632,16 @@ class Game{
   toggleFx(){this.fxOn=!this.fxOn;this.save.settings.fx=this.fxOn;Save.save();this.updateFxLabel();}
   updateFxLabel(){if(this.dom&&this.dom.fxBtn)this.dom.fxBtn.textContent=this.fxOn?'✨ 이펙트: 가득':'🔅 이펙트: 줄임';}
   togglePause(){if(this.paused)this.resume();else this.pause();}
+  // leave a paused run back to the title / stage-select menu
+  pauseToMenu(){this.resume();this.toTitle();}
   pause(){if(this.paused)return;const s=this.rs.status;if(s!=='running'&&s!=='boss')return;this.paused=true;this.prevStatus=s;
     if(this.dom.pauseScreen){this.dom.pauseScreen.classList.remove('hidden');this.dom.pauseScreen.classList.add('show');}}
   resume(){if(!this.paused)return;this.paused=false;
     if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}}
 
-  genProps(){_seed=42;const a=[],len=this.stage.length+400;for(let i=0;i<90;i++){a.push({y:srnd()*len-150,x:(srnd()*2-1)*(TRACK_HALF+1.1),k:srnd()<.5?'tuft':(srnd()<.6?'flower':'rock'),s:.7+srnd()*.7,c:srnd()});}return a;}
+  // Only grass tufts + flowers now (scenery rocks removed — they read as fake
+  // pickups next to the collectible stone piles).
+  genProps(){_seed=42;const a=[],len=this.stage.length+400;for(let i=0;i<90;i++){a.push({y:srnd()*len-150,x:(srnd()*2-1)*(TRACK_HALF+1.1),k:srnd()<.62?'tuft':'flower',s:.7+srnd()*.7,c:srnd()});}return a;}
   resize(){const dpr=window.devicePixelRatio||1,aw=window.innerWidth,ah=window.innerHeight;let w=aw,h=w/(VW/VH);if(h>ah){h=ah;w=h*(VW/VH);}
     const f=document.getElementById('frame');f.style.width=w+'px';f.style.height=h+'px';
     this.canvas.style.width=w+'px';this.canvas.style.height=h+'px';this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);this.scale=(w*dpr)/VW;}
@@ -656,7 +667,8 @@ class Game{
   // Density/HP/elite rate all come from the current stage's spawn params.
   genEnemyPlan(){const sp=this.stage.spawn,plan=[],bossY=this.stage.length;let y=620;
     while(y<bossY-200){const f=y/bossY;const pack=Math.random()<sp.packChance?2:1;
-      const baseHp=Math.round(sp.hpBase+f*f*sp.hpRamp);
+      // gentler-than-quadratic ramp (f^1.55) so the late game isn't a wall
+      const baseHp=Math.round(sp.hpBase+Math.pow(f,1.55)*sp.hpRamp);
       const elite=y>sp.eliteAfterY&&Math.random()<sp.eliteRate; // tanky, threatening guards
       for(let k=0;k<pack;k++)plan.push({y:y+k*46,x:0.18+Math.random()*0.64,hp:elite?Math.round(baseHp*3.2):baseHp,elite});
       y+=rnd(sp.gapMin,sp.gapMax);}return plan;}
@@ -1000,12 +1012,13 @@ class Game{
     this.hpTag(ctx,X,2.12,Z,b.hp,b.maxHp,true);}
   draw_shot(ctx,s){if(this.drawSprite('shot',s))return;const p=this.project(this.wx3(s.x),0.7,this.wz3(s.worldY));if(!p)return;const r=Math.max(2,0.09*p.scale);ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.arc(p.x,p.y,r,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(p.x-r*0.3,p.y-r*0.3,r*0.4,0,7);ctx.fill();}
   draw_stone(ctx,s){if(this.drawSprite('stone',s))return;const X=this.wx3(s.x),Z=this.wz3(s.worldY),bob=Math.sin(s.bob)*0.04;this.shadow(ctx,X,Z,0.2);
-    // soft glow ring so collectible piles read differently from scenery rocks
-    const gp=this.project(X,0.1,Z);if(gp){ctx.save();ctx.globalAlpha=.45+.3*Math.sin(s.bob*1.4);const rg=ctx.createRadialGradient(gp.x,gp.y,1,gp.x,gp.y,Math.max(6,0.42*gp.scale));rg.addColorStop(0,'rgba(255,224,120,.7)');rg.addColorStop(1,'rgba(255,224,120,0)');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(gp.x,gp.y,Math.max(6,0.42*gp.scale),0,7);ctx.fill();ctx.restore();}
-    this.part(ctx,X-0.12,0.12+bob,Z,0.1,'#8a8580','#cfcabf');
-    this.part(ctx,X+0.12,0.11+bob,Z+0.05,0.09,'#7d7a74','#c2bdb2');
-    this.part(ctx,X,0.18+bob,Z-0.03,0.12,'#9a958d','#e3ddcf');
-    const sp=this.project(X,0.36+bob,Z);if(sp){ctx.fillStyle='#fff6c8';ctx.font='900 '+Math.max(9,0.3*sp.scale)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=3;ctx.fillText('✦',sp.x,sp.y);ctx.shadowBlur=0;}}
+    // subtle glow ring so collectible piles still read as pickups
+    const gp=this.project(X,0.1,Z);if(gp){ctx.save();ctx.globalAlpha=.28+.18*Math.sin(s.bob*1.4);const rg=ctx.createRadialGradient(gp.x,gp.y,1,gp.x,gp.y,Math.max(6,0.4*gp.scale));rg.addColorStop(0,'rgba(220,190,110,.55)');rg.addColorStop(1,'rgba(220,190,110,0)');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(gp.x,gp.y,Math.max(6,0.4*gp.scale),0,7);ctx.fill();ctx.restore();}
+    // darker stone bodies
+    this.part(ctx,X-0.12,0.12+bob,Z,0.1,'#4a463f','#726c61');
+    this.part(ctx,X+0.12,0.11+bob,Z+0.05,0.09,'#413e38','#666156');
+    this.part(ctx,X,0.18+bob,Z-0.03,0.12,'#544f47','#7d766a');
+    const sp=this.project(X,0.36+bob,Z);if(sp){ctx.fillStyle='#d8c88a';ctx.font='900 '+Math.max(9,0.28*sp.scale)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=3;ctx.fillText('✦',sp.x,sp.y);ctx.shadowBlur=0;}}
   draw_gate(ctx,g){const Z=this.wz3(g.worldY);if(Z<0.05)return;this.gatePanel(ctx,-TRACK_HALF,0,Z,g.l);this.gatePanel(ctx,0,TRACK_HALF,Z,g.r);}
   gatePanel(ctx,x0,x1,Z,gate){const TOP=1.18;const a=this.project(x0,0,Z),b=this.project(x1,0,Z),c=this.project(x1,TOP,Z),d=this.project(x0,TOP,Z);if(!a||!b||!c||!d)return;
     const pos=gate.tone==='pos';ctx.save();
