@@ -83,6 +83,9 @@
     background:linear-gradient(180deg,rgba(28,38,30,.96),rgba(18,26,20,.96));border:1px solid rgba(255,255,255,.14);
     border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
   #pauseCard h2{font-size:24px;color:#fff;margin-bottom:4px;}
+  .fxToggle{margin-top:16px;pointer-events:auto;cursor:pointer;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08);color:#eafce0;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:700;}
+  .fxToggle:hover{background:rgba(255,255,255,.16);}
 </style>
 </head>
 <body>
@@ -132,7 +135,8 @@
       <h2>일시정지</h2>
       <div class="swLabel">화면 톤</div>
       <div class="swatchRow" id="pauseSwatches"></div>
-      <button class="play" id="resumeBtn" style="margin-top:18px">계속하기</button>
+      <button id="fxBtn" class="fxToggle">✨ 이펙트: 가득</button>
+      <button class="play" id="resumeBtn" style="margin-top:16px">계속하기</button>
     </div>
   </div>
 
@@ -218,6 +222,17 @@ const PALETTES = {
 };
 const PALETTE_ORDER = ['midday','golden_hour','overcast','dusk'];
 const DEFAULT_PALETTE = 'midday';
+
+// HD-2D post-processing intensities — one place to tune or dial everything
+// down. `reduced` is the profile applied by the in-game "이펙트 줄이기" toggle:
+// it keeps readability (parallax + light grade) and drops the heavy/ό noisy
+// passes (bloom, motes, grain) so fast action stays legible.
+const POST = {
+  full:    { grade:1.0, vignette:1.0, bloom:0.28, motes:22, rim:1.0, fog:1.0, grain:0.0 },
+  reduced: { grade:0.5, vignette:0.8, bloom:0.0,  motes:0,  rim:0.4, fog:0.6, grain:0.0 },
+  // parallax layer scroll rates vs worldY (far->near) and silhouette heights
+  parallax:[{rate:0.018,h:34,amp:10},{rate:0.044,h:24,amp:13},{rate:0.085,h:16,amp:9}],
+};
 
 // Roguelike gate pool. Each run draws balanced pairs from this. `cat` keeps a
 // pair offering two different kinds of upgrades; risk gates trade a downside for
@@ -338,6 +353,8 @@ class Game{
   constructor(){this.canvas=document.getElementById('game');this.ctx=this.canvas.getContext('2d');this.audio=A;this.particles=new Particles();
     this.shakeT=0;this.shakeMag=0;this.flashT=0;this.flashCol='#fff';this.floaters=[];this.best=+(localStorage.getItem('david3d_best')||0);
     this.palId=localStorage.getItem('david3d_palette')||DEFAULT_PALETTE;if(!PALETTES[this.palId])this.palId=DEFAULT_PALETTE;this.pal=PALETTES[this.palId];
+    this.fxOn=localStorage.getItem('david3d_fx')!=='0';this.motes=[];
+    this.bloom=document.createElement('canvas');this.bloom.width=Math.round(VW*0.5);this.bloom.height=Math.round(VH*0.5);this.bctx=this.bloom.getContext('2d');
     this.paused=false;this.prevStatus=null;
     this.props=this.genProps();this.titleT=0;this.input=new Input(this);
     this.dom={hud:document.getElementById('hud'),start:document.getElementById('startScreen'),result:document.getElementById('resultScreen'),
@@ -353,6 +370,7 @@ class Game{
     this.dom.mute.addEventListener('click',()=>{this.audio.muted=!this.audio.muted;this.dom.mute.textContent=this.audio.muted?'🔇':'🔊';});
     if(this.dom.pauseBtn)this.dom.pauseBtn.addEventListener('click',()=>this.togglePause());
     const rb=document.getElementById('resumeBtn');if(rb)rb.addEventListener('click',()=>this.resume());
+    this.dom.fxBtn=document.getElementById('fxBtn');if(this.dom.fxBtn){this.dom.fxBtn.addEventListener('click',()=>this.toggleFx());this.updateFxLabel();}
     this.buildPaletteUI();
     if(this.best>0)this.dom.best.textContent='최고 점수: '+this.best;
     this.initRun();}
@@ -365,6 +383,8 @@ class Game{
     make(this.dom.titleSw);make(this.dom.pauseSw);}
   setPalette(id){if(!PALETTES[id])return;this.palId=id;this.pal=PALETTES[id];try{localStorage.setItem('david3d_palette',id);}catch(e){}
     for(const host of [this.dom.titleSw,this.dom.pauseSw]){if(!host)continue;for(const b of host.children)b.classList.toggle('on',b.dataset.pal===id);}}
+  toggleFx(){this.fxOn=!this.fxOn;try{localStorage.setItem('david3d_fx',this.fxOn?'1':'0');}catch(e){}this.updateFxLabel();}
+  updateFxLabel(){if(this.dom&&this.dom.fxBtn)this.dom.fxBtn.textContent=this.fxOn?'✨ 이펙트: 가득':'🔅 이펙트: 줄임';}
   togglePause(){if(this.paused)this.resume();else this.pause();}
   pause(){if(this.paused)return;const s=this.rs.status;if(s!=='running'&&s!=='boss')return;this.paused=true;this.prevStatus=s;
     if(this.dom.pauseScreen){this.dom.pauseScreen.classList.remove('hidden');this.dom.pauseScreen.classList.add('show');}}
@@ -559,7 +579,29 @@ class Game{
     this.particles.draw(ctx);this.drawFloaters(ctx);
     ctx.restore();
     if(this.flashT>0){ctx.globalAlpha=clamp(this.flashT*3,0,.6);ctx.fillStyle=this.flashCol;ctx.fillRect(0,0,VW,VH);ctx.globalAlpha=1;}
-    const vg=ctx.createRadialGradient(VW/2,VH*0.55,VH*0.3,VW/2,VH*0.55,VH*0.8);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.32)');ctx.fillStyle=vg;ctx.fillRect(0,0,VW,VH);}
+    this.postProcess(ctx);}
+
+  // ---- HD-2D atmospheric post pass (bloom, grade, vignette, motes, grain) ----
+  postProcess(ctx){const prof=this.fxOn?POST.full:POST.reduced,pal=this.pal;
+    // cheap bloom: blurred half-res copy of the frame, added back over highlights
+    if(prof.bloom>0){const bc=this.bctx,bw=this.bloom.width,bh=this.bloom.height;
+      bc.clearRect(0,0,bw,bh);bc.filter='blur(3px)';bc.drawImage(this.canvas,0,0,bw,bh);bc.filter='none';
+      ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=prof.bloom;ctx.drawImage(this.bloom,0,0,VW,VH);ctx.restore();}
+    // colour grade: unify the scene toward the palette tint
+    if(prof.grade>0){ctx.save();ctx.globalCompositeOperation='soft-light';
+      ctx.globalAlpha=clamp(pal.gradeTint.a*prof.grade*2.6,0,0.9);ctx.fillStyle='rgb('+pal.gradeTint.c+')';ctx.fillRect(0,0,VW,VH);ctx.restore();}
+    // vignette
+    if(prof.vignette>0){const vg=ctx.createRadialGradient(VW/2,VH*0.55,VH*0.3,VW/2,VH*0.55,VH*0.8);
+      vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,'+(0.32*prof.vignette)+')');ctx.fillStyle=vg;ctx.fillRect(0,0,VW,VH);}
+    // floating light dust
+    if(prof.motes>0){if(!this.paused)this.updateMotes(prof);this.drawMotes(ctx);}else this.motes.length=0;
+    // optional grain/scanline (default off)
+    if(prof.grain>0){ctx.save();ctx.globalAlpha=0.06*prof.grain;ctx.fillStyle='#000';for(let y=0;y<VH;y+=3)ctx.fillRect(0,y,VW,1);ctx.restore();}}
+  updateMotes(prof){const want=prof.motes;
+    while(this.motes.length<want)this.motes.push({x:Math.random()*VW,y:Math.random()*VH,r:rnd(0.6,2.2),ph:Math.random()*7,sp:rnd(4,12)});
+    while(this.motes.length>want)this.motes.pop();
+    for(const m of this.motes){m.y-=m.sp/60;m.ph+=0.02;m.x+=Math.sin(m.ph)*0.3;if(m.y<-4){m.y=VH+4;m.x=Math.random()*VW;}}}
+  drawMotes(ctx){ctx.save();ctx.globalCompositeOperation='lighter';for(const m of this.motes){ctx.globalAlpha=0.22+0.2*Math.sin(m.ph*1.7);ctx.fillStyle=this.pal.moteColor+'0.85)';ctx.beginPath();ctx.arc(m.x,m.y,m.r,0,7);ctx.fill();}ctx.restore();}
 
   drawWorld(ctx){
     const pal=this.pal;
@@ -572,10 +614,14 @@ class Game{
     ctx.save();ctx.globalAlpha=.85;const gx=VW*pal.glow.x,gy=horizon*pal.glow.y,gr0=pal.glow.r;
     const sg=ctx.createRadialGradient(gx,gy,4,gx,gy,gr0);sg.addColorStop(0,'rgba('+pal.glow.c+',.95)');sg.addColorStop(1,'rgba('+pal.glow.c+',0)');
     ctx.fillStyle=sg;ctx.fillRect(gx-gr0,gy-gr0,gr0*2,gr0*2);ctx.restore();
-    // distant hills (single ridge here; stage 2 expands to parallax layers)
-    ctx.fillStyle=pal.hills[1];ctx.beginPath();ctx.moveTo(0,horizon);for(let i=0;i<=8;i++){const x=i/8*VW;ctx.lineTo(x,horizon-14-12*Math.sin(i*1.3+2));}ctx.lineTo(VW,horizon);ctx.closePath();ctx.fill();
+    // distant hills — 3 parallax layers (far->near) scrolling vs worldY
+    this.drawHills(ctx,horizon);
     // ground (palette gradient)
     const gr=ctx.createLinearGradient(0,horizon,0,VH);gr.addColorStop(0,pal.ground[0]);gr.addColorStop(1,pal.ground[1]);ctx.fillStyle=gr;ctx.fillRect(0,horizon,VW,VH-horizon);
+    // atmospheric perspective: haze band fading the far ground into fog colour
+    const prof0=this.fxOn?POST.full:POST.reduced;
+    if(prof0.fog>0){const fh=Math.min(VH*0.22,VH-horizon);const fog=ctx.createLinearGradient(0,horizon,0,horizon+fh);
+      fog.addColorStop(0,this.hexA(pal.fogColor,0.55*prof0.fog));fog.addColorStop(1,this.hexA(pal.fogColor,0));ctx.fillStyle=fog;ctx.fillRect(0,horizon,VW,fh);}
     // perspective grid (lateral lines scrolling)
     const frac=(this.player.worldY*FWD)%1;ctx.strokeStyle='rgba(255,255,255,'+pal.gridAlpha+')';ctx.lineWidth=1.5;
     for(let k=1;k<=26;k++){const z=k-frac;const a=this.project(-TRACK_HALF*1.6,0,z),b=this.project(TRACK_HALF*1.6,0,z);if(a&&b){ctx.globalAlpha=clamp(1-z/26,.15,1)*.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
@@ -591,6 +637,19 @@ class Game{
     // finish line
     const fz=(DATA.level.boss.y-this.player.worldY)*FWD;if(fz>0.2&&fz<22){const a=this.project(-TRACK_HALF,0,fz),b=this.project(TRACK_HALF,0,fz);if(a&&b){ctx.fillStyle='rgba(255,255,255,.5)';const seg=10;for(let i=0;i<seg;i++){if(i%2)continue;ctx.fillStyle=i%4<2?'#fff':'#222';ctx.fillRect(lerp(a.x,b.x,i/seg),a.y-3,(b.x-a.x)/seg,6);}}}
   }
+  // "#rrggbb" -> "rgba(r,g,b,a)"
+  hexA(hex,a){const h=hex.replace('#','');const n=parseInt(h.length===3?h.replace(/(.)/g,'$1$1'):h,16);
+    return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+  // 3-layer parallax ridge silhouettes, far->near, scrolling horizontally with
+  // worldY at different rates so the backdrop has depth as you advance.
+  drawHills(ctx,horizon){const pal=this.pal,layers=POST.parallax,y0=this.player.worldY;
+    for(let L=0;L<3;L++){const cfg=layers[L],col=pal.hills[L]||pal.hills[pal.hills.length-1];
+      const phase=y0*cfg.rate, base=horizon+L*3; // nearer layers sit a touch lower
+      ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(0,base);
+      const steps=10;for(let i=0;i<=steps;i++){const x=i/steps*VW;
+        const yy=base-cfg.h-cfg.amp*Math.sin(i*1.1+phase+L*2)-cfg.amp*0.5*Math.sin(i*2.7-phase*1.7);
+        ctx.lineTo(x,yy);}
+      ctx.lineTo(VW,base);ctx.closePath();ctx.fill();}}
   drawProp(ctx,p,pr){const s=pr.scale*p.s*0.04;if(s<0.05)return;ctx.save();ctx.translate(pr.x,pr.y);
     if(p.k==='tuft'){ctx.strokeStyle='rgba(40,90,30,.55)';ctx.lineWidth=Math.max(1,2*s);ctx.lineCap='round';for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(i*3*s,0);ctx.lineTo(i*3*s+i*s,-10*s);ctx.stroke();}}
     else if(p.k==='flower'){const fc=p.c<.33?'#f6d743':p.c<.66?'#e87fb0':'#fff';ctx.fillStyle=fc;for(let i=0;i<5;i++){const a=i/5*7;ctx.beginPath();ctx.arc(Math.cos(a)*4*s,-6*s+Math.sin(a)*4*s,2.5*s,0,7);ctx.fill();}ctx.fillStyle='#caa83a';ctx.beginPath();ctx.arc(0,-6*s,2*s,0,7);ctx.fill();}
@@ -614,12 +673,25 @@ class Game{
     ctx.restore();}
   shadow(ctx,X,Z,rw){const p=this.project(X,0,Z);if(!p)return;ctx.save();ctx.globalAlpha=.25;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(p.x,p.y,rw*p.scale,rw*p.scale*0.4,0,0,7);ctx.fill();ctx.restore();}
   part(ctx,X,Y,Z,r,base,lite,ry){const p=this.project(X,Y,Z);if(!p)return null;this.ball(ctx,p.x,p.y,r*p.scale,(ry||r)*p.scale,base,lite);return p;}
+  // Sprite drop-in hook: if a prerendered sprite is ever registered for this
+  // kind, draw it and return true so the procedural draw is skipped. Empty for
+  // now (procedural art) — lets future sprite art slot in without touching the
+  // renderer. (Stage 2 scope: hook only, no art.)
+  sprites=null;
+  drawSprite(kind,o,p){const reg=this.sprites;if(!reg||!reg[kind])return false;/* future: ctx.drawImage(...) */return false;}
+  // Cheap rim/edge light: a bright additive crescent on the palette light side,
+  // bedding the character into the lit scene. Gated by the FX profile.
+  rim(ctx,p,worldR){if(!p)return;const prof=this.fxOn?POST.full:POST.reduced;if(prof.rim<=0)return;
+    const R=worldR*p.scale,d=this.pal.lightDir,a=Math.atan2(d.y,d.x);
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.5*prof.rim;
+    ctx.strokeStyle=this.pal.lightColor+'0.9)';ctx.lineWidth=Math.max(1,R*0.18);ctx.lineCap='round';
+    ctx.beginPath();ctx.arc(p.x,p.y,R*0.92,a-0.7,a+0.7);ctx.stroke();ctx.restore();}
 
-  draw_sheep(ctx,s){const X=this.wx3(s.x),Z=this.wz3(s.worldY),bob=Math.sin(s.bob)*0.03;this.shadow(ctx,X,Z,0.26);
+  draw_sheep(ctx,s){if(this.drawSprite('sheep',s))return;const X=this.wx3(s.x),Z=this.wz3(s.worldY),bob=Math.sin(s.bob)*0.03;this.shadow(ctx,X,Z,0.26);
     this.part(ctx,X-0.14,0.26+bob,Z,0.15,'#dcd8cc','#ffffff');this.part(ctx,X+0.14,0.26+bob,Z,0.15,'#dcd8cc','#ffffff');
-    this.part(ctx,X,0.32+bob,Z,0.24,'#e9e6da','#ffffff');this.part(ctx,X,0.37+bob,Z-0.04,0.21,'#f3f1e8','#ffffff');
+    this.part(ctx,X,0.32+bob,Z,0.24,'#e9e6da','#ffffff');const bp=this.part(ctx,X,0.37+bob,Z-0.04,0.21,'#f3f1e8','#ffffff');this.rim(ctx,bp,0.23);
     this.part(ctx,X,0.27+bob,Z+0.2,0.1,'#3a3a3a','#5a5a5a');}
-  draw_player(ctx,p){const X=this.wx3(p.x),Z=0,bob=Math.sin(p.anim)*0.04,fall=p.dead?Math.min(1,p.deadT*2):0;
+  draw_player(ctx,p){if(this.drawSprite('player',p))return;const X=this.wx3(p.x),Z=0,bob=Math.sin(p.anim)*0.04,fall=p.dead?Math.min(1,p.deadT*2):0;
     this.shadow(ctx,X,Z,0.4);
     if(p.dead){ctx.save();} const yo=-fall*0.4, tilt=fall*0.5;
     // legs
@@ -628,16 +700,16 @@ class Game{
     const a=this.project(X+0.34,0.1,Z+0.05),b=this.project(X+0.42,1.5+yo,Z+0.05);if(a&&b){ctx.strokeStyle='#caa15a';ctx.lineWidth=Math.max(2,0.06*a.scale);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
     const hurt=p.hurt>0&&((p.hurt*20|0)%2===0);
     // torso
-    this.part(ctx,X,0.72+yo,Z,0.34,hurt?'#fff':'#2c55b8',hurt?'#fff':'#5b8cf0',0.42);
+    const tp=this.part(ctx,X,0.72+yo,Z,0.34,hurt?'#fff':'#2c55b8',hurt?'#fff':'#5b8cf0',0.42);if(!hurt)this.rim(ctx,tp,0.4);
     // head
     this.part(ctx,X,1.18+yo,Z,0.21,hurt?'#fff':'#e8b98c','#ffd9b0');
     // hair
     const hp=this.project(X,1.26+yo,Z);if(hp){ctx.fillStyle='#5a3b22';ctx.beginPath();ctx.ellipse(hp.x,hp.y,0.2*hp.scale,0.13*hp.scale,0,Math.PI,0);ctx.fill();}
     if(p.rs.shield>0){const sp=this.project(X,0.8+yo,Z);if(sp){ctx.strokeStyle='rgba(120,200,255,'+(0.5+0.3*Math.sin(p.anim*2))+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sp.x,sp.y,0.55*sp.scale,0,7);ctx.stroke();}}}
-  draw_wolf(ctx,w){const X=this.wx3(w.x),Z=this.wz3(w.worldY),S=w.elite?1.6:1;this.shadow(ctx,X,Z,0.34*S);
+  draw_wolf(ctx,w){if(this.drawSprite('wolf',w))return;const X=this.wx3(w.x),Z=this.wz3(w.worldY),S=w.elite?1.6:1;this.shadow(ctx,X,Z,0.34*S);
     const lite=w.flash>0?'#ffffff':(w.elite?'#c25a48':'#8a8a92'),base=w.flash>0?'#ffffff':(w.elite?'#6e2a22':'#5a5a62');
     this.part(ctx,X-0.28*S,0.5*S,Z-0.28*S,0.1*S,base,lite);
-    this.part(ctx,X,0.42*S,Z,0.26*S,base,lite,0.34*S);
+    const wb=this.part(ctx,X,0.42*S,Z,0.26*S,base,lite,0.34*S);if(w.flash<=0)this.rim(ctx,wb,0.28*S);
     const e1=this.project(X-0.16*S,0.78*S,Z+0.18*S),e2=this.project(X+0.16*S,0.78*S,Z+0.18*S),es=4*S;ctx.fillStyle=base;
     if(e1){ctx.beginPath();ctx.moveTo(e1.x-es,e1.y+es);ctx.lineTo(e1.x,e1.y-7*S);ctx.lineTo(e1.x+es,e1.y+es);ctx.fill();}
     if(e2){ctx.beginPath();ctx.moveTo(e2.x-es,e2.y+es);ctx.lineTo(e2.x,e2.y-7*S);ctx.lineTo(e2.x+es,e2.y+es);ctx.fill();}
@@ -645,7 +717,7 @@ class Game{
     const ey=this.project(X,0.56*S,Z+0.34*S);if(ey){ctx.fillStyle=w.elite?'#ffd23a':'#ff3b2f';ctx.beginPath();ctx.arc(ey.x-3*S,ey.y,1.6*S,0,7);ctx.arc(ey.x+3*S,ey.y,1.6*S,0,7);ctx.fill();}
     if(w.elite){const cp=this.project(X,1.02,Z);if(cp){ctx.fillStyle='#ffce3a';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.font='900 '+Math.max(11,0.34*cp.scale)+'px system-ui';ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=3;ctx.fillText('★',cp.x,cp.y);ctx.shadowBlur=0;}}
     this.hpTag(ctx,X,1.3*S,Z,w.hp,w.maxHp,w.elite);}
-  draw_boss(ctx,b){const X=this.wx3(b.x),Z=this.wz3(b.worldY),charging=b.state==='windup'||b.state==='charge';this.shadow(ctx,X,Z,0.95);
+  draw_boss(ctx,b){if(this.drawSprite('boss',b))return;const X=this.wx3(b.x),Z=this.wz3(b.worldY),charging=b.state==='windup'||b.state==='charge';this.shadow(ctx,X,Z,0.95);
     const lite=b.flash>0?'#ffd9b0':'#9a6a40',base=b.flash>0?'#ffd9b0':'#6a4528';
     // ears
     this.part(ctx,X-0.6,1.75,Z,0.3,base,lite);this.part(ctx,X+0.6,1.75,Z,0.3,base,lite);
@@ -653,7 +725,7 @@ class Game{
     // arms
     const ao=charging?1.15:0.95;this.part(ctx,X-ao,0.55,Z+0.1,0.28,base,lite);this.part(ctx,X+ao,0.55,Z+0.1,0.28,base,lite);
     // body
-    this.part(ctx,X,0.95,Z,0.92,base,lite,1.0);
+    const bbp=this.part(ctx,X,0.95,Z,0.92,base,lite,1.0);if(b.flash<=0)this.rim(ctx,bbp,0.92);
     // belly
     this.part(ctx,X,0.7,Z+0.4,0.5,'rgba(240,220,195,.5)','rgba(255,240,220,.6)');
     // muzzle
@@ -663,8 +735,8 @@ class Game{
       if(charging){ctx.strokeStyle='#3a1808';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ep.x-20,ep.y-8);ctx.lineTo(ep.x-6,ep.y-2);ctx.moveTo(ep.x+20,ep.y-8);ctx.lineTo(ep.x+6,ep.y-2);ctx.stroke();}}
     // big HP number above the bear
     this.hpTag(ctx,X,2.12,Z,b.hp,b.maxHp,true);}
-  draw_shot(ctx,s){const p=this.project(this.wx3(s.x),0.7,this.wz3(s.worldY));if(!p)return;const r=Math.max(2,0.09*p.scale);ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.arc(p.x,p.y,r,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(p.x-r*0.3,p.y-r*0.3,r*0.4,0,7);ctx.fill();}
-  draw_stone(ctx,s){const X=this.wx3(s.x),Z=this.wz3(s.worldY),bob=Math.sin(s.bob)*0.04;this.shadow(ctx,X,Z,0.2);
+  draw_shot(ctx,s){if(this.drawSprite('shot',s))return;const p=this.project(this.wx3(s.x),0.7,this.wz3(s.worldY));if(!p)return;const r=Math.max(2,0.09*p.scale);ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.arc(p.x,p.y,r,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(p.x-r*0.3,p.y-r*0.3,r*0.4,0,7);ctx.fill();}
+  draw_stone(ctx,s){if(this.drawSprite('stone',s))return;const X=this.wx3(s.x),Z=this.wz3(s.worldY),bob=Math.sin(s.bob)*0.04;this.shadow(ctx,X,Z,0.2);
     // soft glow ring so collectible piles read differently from scenery rocks
     const gp=this.project(X,0.1,Z);if(gp){ctx.save();ctx.globalAlpha=.45+.3*Math.sin(s.bob*1.4);const rg=ctx.createRadialGradient(gp.x,gp.y,1,gp.x,gp.y,Math.max(6,0.42*gp.scale));rg.addColorStop(0,'rgba(255,224,120,.7)');rg.addColorStop(1,'rgba(255,224,120,0)');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(gp.x,gp.y,Math.max(6,0.42*gp.scale),0,7);ctx.fill();ctx.restore();}
     this.part(ctx,X-0.12,0.12+bob,Z,0.1,'#8a8580','#cfcabf');
