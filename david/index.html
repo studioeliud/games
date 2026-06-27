@@ -110,6 +110,26 @@
   .achRow .alb{flex:1 1 auto;text-align:left;}
   .achRow .apg{font-size:12px;color:#ffe06a;font-weight:800;}
   #walletLine{font-size:15px;color:#ffe7a0;margin-top:14px;letter-spacing:.02em;}
+  .btnRow{display:flex;gap:8px;justify-content:center;margin-top:8px;}
+  /* shop screen */
+  #shopCard{position:relative;display:flex;flex-direction:column;align-items:center;width:90%;max-width:380px;max-height:86%;
+    background:linear-gradient(180deg,rgba(28,38,30,.97),rgba(18,26,20,.97));border:1px solid rgba(255,255,255,.14);
+    border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  #shopCard h2{font-size:22px;color:#fff;}
+  .walletHdr{font-size:15px;color:#ffe7a0;margin:6px 0 12px;}
+  .shopBody{width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:7px;}
+  .shopSec{font-size:13px;font-weight:800;color:#a0d8ff;letter-spacing:.04em;margin:8px 2px 2px;text-align:left;}
+  .shopSec .dim{font-weight:600;color:#7f8a86;font-size:11px;}
+  .shopRow{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);}
+  .shopRow .dot{width:16px;height:16px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 2px rgba(255,255,255,.2);}
+  .shopRow .info{flex:1 1 auto;text-align:left;display:flex;flex-direction:column;}
+  .shopRow .info b{color:#fff;font-size:14px;}
+  .shopRow .info span{color:#9aa7a0;font-size:11.5px;font-weight:600;}
+  .shopRow .buy{cursor:pointer;border:1px solid rgba(255,224,106,.5);background:rgba(255,224,106,.12);color:#ffe06a;
+    border-radius:9px;padding:7px 11px;font-size:12.5px;font-weight:800;white-space:nowrap;flex:0 0 auto;}
+  .shopRow .buy.no{opacity:.4;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:#9aa7a0;}
+  .shopRow .tagx.on{font-size:12px;font-weight:800;color:#9be38a;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -151,7 +171,7 @@
       <div class="swatchRow" id="titleSwatches"></div>
       <div class="hint">드래그 · A/D · ← →  로 이동 · P 일시정지</div>
       <div class="hint" id="walletLine"></div>
-      <button id="achBtn" class="fxToggle" style="margin-top:6px">🏅 업적</button>
+      <div class="btnRow"><button id="shopBtn" class="fxToggle">🛖 상점</button><button id="achBtn" class="fxToggle">🏅 업적</button></div>
       <div class="hint" id="bestLine"></div>
     </div>
   </div>
@@ -162,6 +182,16 @@
       <h2 id="achHdr">업적</h2>
       <div id="achList" class="achList"></div>
       <button class="play" id="achClose" style="margin-top:14px">닫기</button>
+    </div>
+  </div>
+
+  <div id="shopScreen" class="overlay hidden">
+    <div class="scrim"></div>
+    <div id="shopCard" class="panelbox">
+      <h2>🛖 상점</h2>
+      <div id="shopWallet" class="walletHdr"></div>
+      <div id="shopList" class="shopBody"></div>
+      <button class="play" id="shopClose" style="margin-top:12px">닫기</button>
     </div>
   </div>
 
@@ -241,6 +271,24 @@ const STAGES = [
     spawn:{gapMin:280,gapMax:480,packChance:0.45,hpBase:24,hpRamp:210,eliteAfterY:1100,eliteRate:0.26,stoneGapMin:250,stoneGapMax:430},
     boss:bear({hp:1500,chargeCD:1.1,moveSpeed:104,label:'그림자 곰',col:{base:'#2e2a40',lite:'#6a6488'}}), stars:BASE_STARS, rewardMult:1.7 },
 ];
+
+// --------------------------- META / SHOP -----------------------------
+// Growth = variety + sidegrades, never raw power that skips the boss skill
+// check (principle 3). Shepherd traits are TRADE-OFFs (+X for -Y); locked
+// gates add draft options; coins buy cosmetics / a per-run consumable.
+const SHEPHERDS = [
+  {id:'david',   name:'다윗',          desc:'균형 잡힌 기본 양치기',                 cost:null,                 color:{base:'#2c55b8',lite:'#5b8cf0'}, trait:null},
+  {id:'archer',  name:'사수 미리암',   desc:'투사체 +1 · 슬링 데미지 -3 (다발·저위력)', cost:{unlock_tokens:2}, color:{base:'#1f7a5a',lite:'#46c79a'}, trait:{slingProjectiles:1,slingDamage:-3}},
+  {id:'warden',  name:'수호자 보아스', desc:'보호막 +2로 시작 · 돌 보충 -30%',        cost:{unlock_tokens:2}, color:{base:'#7a3b8f',lite:'#c07fd0'}, trait:{shield:2,stoneRegenMul:0.7}},
+  {id:'forager', name:'채집가 룻',     desc:'돌 최대/보충 ↑ · 지팡이 데미지 -4',      cost:{unlock_tokens:3}, color:{base:'#b5701f',lite:'#f0a94e'}, trait:{stoneMax:20,stoneRegenMul:1.5,staffDamage:-4}},
+];
+const SHOP_GATES = [
+  {id:'twin_sling', name:'쌍 슬링',     desc:'드래프트에 「투사체 +2」 추가', cost:{unlock_tokens:2}},
+  {id:'bulwark',    name:'방벽',        desc:'드래프트에 「보호막 +5」 추가', cost:{unlock_tokens:2}},
+  {id:'stone_font', name:'돌 샘',       desc:'드래프트에 「돌 보충 +80%」 추가', cost:{unlock_tokens:3}},
+  {id:'berserk',    name:'광전사',      desc:'드래프트에 「지팡이 +12·양 -1」 추가', cost:{unlock_tokens:3}},
+];
+const SUPPLY_COST = 30; // coins per run for the optional starting supply
 
 // ----------------------------- PALETTES ------------------------------
 // Every drawWorld() colour lives here so visuals, parallax (stage 2) and
@@ -355,6 +403,12 @@ const GATE_POOL = [
   {id:'risk_sheep_dmg', label:'양 -2 · 슬링 +9',  tone:'neg', cat:'risk', w:4, fx:[{t:'sheep',op:'add',v:-2},{t:'slingDamage',op:'add',v:9}]},
   {id:'risk_stone_proj',label:'돌 -8개 · 투사체 +1', tone:'neg', cat:'risk', w:4, fx:[{t:'stones',op:'add',v:-8},{t:'slingProjectiles',op:'add',v:1}]},
   {id:'risk_mud_dmg',   label:'진흙 · 데미지 +10',tone:'neg', cat:'risk', w:3, fx:[{t:'mud',op:'special',v:0.6,d:2.5},{t:'slingDamage',op:'add',v:10}]},
+  // --- locked gates: unlocked with tokens in the shop. These add BUILD VARIETY
+  // (new draft options), not raw power — they draft 1-of-2 like every other gate.
+  {id:'twin_sling', label:'슬링 투사체 +2',    tone:'pos', cat:'sling', w:5, locked:true, fx:{t:'slingProjectiles',op:'add',v:2}},
+  {id:'bulwark',    label:'보호막 +5',          tone:'pos', cat:'flock', w:5, locked:true, fx:{t:'shield',op:'special',v:5}},
+  {id:'stone_font', label:'돌 보충 +80%',       tone:'pos', cat:'econ',  w:4, locked:true, fx:{t:'stoneRegen',op:'mul',v:1.8}},
+  {id:'berserk',    label:'지팡이 +12 · 양 -1', tone:'neg', cat:'risk',  w:3, locked:true, fx:[{t:'staffDamage',op:'add',v:12},{t:'sheep',op:'add',v:-1}]},
 ];
 
 // Reward dropped when an ELITE wolf is killed: a small gate-like buff + coins.
@@ -465,7 +519,8 @@ class Game{
       titleSw:document.getElementById('titleSwatches'),pauseSw:document.getElementById('pauseSwatches'),
       stageSel:document.getElementById('stageSelect'),subtitle:document.getElementById('subtitle'),
       wallet:document.getElementById('walletLine'),achScreen:document.getElementById('achScreen'),
-      achList:document.getElementById('achList'),achHdr:document.getElementById('achHdr')};
+      achList:document.getElementById('achList'),achHdr:document.getElementById('achHdr'),
+      shopScreen:document.getElementById('shopScreen'),shopList:document.getElementById('shopList'),shopWallet:document.getElementById('shopWallet')};
     this.resize();window.addEventListener('resize',()=>this.resize());
     const sbtn=document.getElementById('startBtn');if(sbtn)sbtn.addEventListener('click',()=>this.start(this.curStageIdx));
     document.getElementById('againBtn').addEventListener('click',()=>this.start(this.curStageIdx));
@@ -476,6 +531,8 @@ class Game{
     const ab=document.getElementById('achBtn');if(ab)ab.addEventListener('click',()=>this.openAch());
     const ac=document.getElementById('achClose');if(ac)ac.addEventListener('click',()=>this.closeAch());
     const mb=document.getElementById('menuBtn');if(mb)mb.addEventListener('click',()=>this.toTitle());
+    const shb=document.getElementById('shopBtn');if(shb)shb.addEventListener('click',()=>this.openShop());
+    const shc=document.getElementById('shopClose');if(shc)shc.addEventListener('click',()=>this.closeShop());
     this.buildPaletteUI();this.buildStageUI();this.updateWallet();
     if(this.best>0)this.dom.best.textContent='최고 점수: '+this.best;
     this.initRun();}
@@ -492,7 +549,7 @@ class Game{
   highlightSwatch(){if(!this.dom)return;for(const host of [this.dom.titleSw,this.dom.pauseSw]){if(!host)continue;for(const b of host.children)b.classList.toggle('on',b.dataset.pal===this.palId);}}
   // ---- stage unlock state (stage 4 will fold this into the full save) ----
   saveCleared(){Save.save();}
-  stageUnlocked(i){if(REVIEW_UNLOCK_ALL)return true;return i===0||this.stagesCleared.includes(STAGES[i-1].id);}
+  stageUnlocked(i){if(REVIEW_UNLOCK_ALL)return true;return i===0||this.stagesCleared.includes(STAGES[i-1].id)||(this.save.owned.stagesUnlocked||[]).includes(STAGES[i].id);}
   buildStageUI(){const host=this.dom.stageSel;if(!host)return;host.innerHTML='';
     STAGES.forEach((s,i)=>{const open=this.stageUnlocked(i),cleared=this.stagesCleared.includes(s.id);
       const b=document.createElement('button');b.className='stageBtn'+(open?'':' locked');b.dataset.idx=i;
@@ -517,6 +574,54 @@ class Game{
     this.dom.result.classList.add('hidden');this.dom.result.classList.remove('show');
     this.dom.hud.classList.add('hidden');
     this.dom.start.classList.remove('hidden');this.dom.start.classList.add('show');}
+
+  // ---- meta: shepherd traits (sidegrades) applied to the fresh run state ----
+  applyShepherd(){const id=(this.save.equipped&&this.save.equipped.shepherd)||'david';
+    const sh=SHEPHERDS.find(s=>s.id===id)||SHEPHERDS[0];this.shepherd=sh;const t=sh.trait,rs=this.rs;if(!t)return;
+    if(t.slingProjectiles)rs.slingProjectiles=Math.min(5,rs.slingProjectiles+t.slingProjectiles);
+    if(t.slingDamage)rs.slingDamage=Math.max(2,rs.slingDamage+t.slingDamage);
+    if(t.staffDamage)rs.staffDamage=Math.max(2,rs.staffDamage+t.staffDamage);
+    if(t.stoneMax)rs.stoneMax+=t.stoneMax;
+    if(t.stoneRegenMul)rs.stoneRegen*=t.stoneRegenMul;
+    if(t.shield)rs.shield+=t.shield;}
+
+  // ---- shop: spend currency on variety/sidegrades/cosmetics (no power skip) ----
+  costStr(c){if(!c)return '무료';const ic={coins:'🪙',chapter_points:'📖',unlock_tokens:'🔑'};return Object.keys(c).map(k=>ic[k]+c[k]).join(' ');}
+  canAfford(c){if(!c)return true;const w=this.save.wallet;for(const k in c)if((w[k]||0)<c[k])return false;return true;}
+  spend(c){if(!c)return true;if(!this.canAfford(c))return false;const w=this.save.wallet;for(const k in c)w[k]-=c[k];Save.save();this.updateWallet();return true;}
+  buyShepherd(id){const sh=SHEPHERDS.find(s=>s.id===id);if(!sh)return;const owned=this.save.owned.shepherds;
+    if(!owned.includes(id)){if(!this.spend(sh.cost))return;owned.push(id);}
+    this.save.equipped.shepherd=id;Save.save();this.renderShop();}
+  buyGate(id){const g=SHOP_GATES.find(x=>x.id===id);if(!g)return;const owned=this.save.owned.gates;
+    if(owned.includes(id))return;if(!this.spend(g.cost))return;owned.push(id);Save.save();this.renderShop();}
+  buyStageUnlock(i){if(REVIEW_UNLOCK_ALL)return;const s=STAGES[i];if(!s||this.stageUnlocked(i))return;
+    const cost={chapter_points:2+i};if(!this.spend(cost))return;
+    (this.save.owned.stagesUnlocked||(this.save.owned.stagesUnlocked=[])).push(s.id);Save.save();this.buildStageUI();this.renderShop();}
+  toggleSupply(){this.save.settings.supply=!this.save.settings.supply;Save.save();this.renderShop();}
+  openShop(){this.renderShop();if(this.dom.shopScreen){this.dom.shopScreen.classList.remove('hidden');this.dom.shopScreen.classList.add('show');}}
+  closeShop(){if(this.dom.shopScreen){this.dom.shopScreen.classList.add('hidden');this.dom.shopScreen.classList.remove('show');}}
+  renderShop(){const host=this.dom.shopList;if(!host)return;const sv=this.save;let h='';
+    h+='<div class="shopSec">양치기 <span class="dim">(특성 = 트레이드오프)</span></div>';
+    for(const s of SHEPHERDS){const owned=sv.owned.shepherds.includes(s.id),eq=sv.equipped.shepherd===s.id;
+      const can=owned||this.canAfford(s.cost);
+      const act=eq?'<span class="tagx on">장착됨</span>':(owned?'<button class="buy" data-eq="'+s.id+'">장착</button>':'<button class="buy'+(can?'':' no')+'" data-sh="'+s.id+'">'+this.costStr(s.cost)+'</button>');
+      h+='<div class="shopRow"><i class="dot" style="background:'+s.color.base+'"></i><div class="info"><b>'+s.name+'</b><span>'+s.desc+'</span></div>'+act+'</div>';}
+    h+='<div class="shopSec">게이트 해금 <span class="dim">(드래프트 다양성)</span></div>';
+    for(const g of SHOP_GATES){const owned=sv.owned.gates.includes(g.id),can=this.canAfford(g.cost);
+      const act=owned?'<span class="tagx on">해금됨</span>':'<button class="buy'+(can?'':' no')+'" data-gate="'+g.id+'">'+this.costStr(g.cost)+'</button>';
+      h+='<div class="shopRow"><i class="dot" style="background:#6aa0ff"></i><div class="info"><b>'+g.name+'</b><span>'+g.desc+'</span></div>'+act+'</div>';}
+    h+='<div class="shopSec">런 옵션</div>';
+    const sup=sv.settings.supply;
+    h+='<div class="shopRow"><i class="dot" style="background:#ffd24a"></i><div class="info"><b>출발 보급</b><span>매 판 시작 시 🪙'+SUPPLY_COST+' 소모 → 돌 +12 · 보호막 +1</span></div><button class="buy" data-supply="1">'+(sup?'켜짐':'꺼짐')+'</button></div>';
+    if(!REVIEW_UNLOCK_ALL){h+='<div class="shopSec">스테이지 해금 <span class="dim">(📖 챕터 포인트)</span></div>';
+      STAGES.forEach((s,i)=>{if(this.stageUnlocked(i))return;h+='<div class="shopRow"><i class="dot" style="background:'+PALETTES[s.palette].swatch+'"></i><div class="info"><b>'+s.name+'</b><span>미리 해금</span></div><button class="buy" data-stage="'+i+'">📖'+(2+i)+'</button></div>';});}
+    host.innerHTML=h;
+    host.querySelectorAll('[data-sh]').forEach(b=>b.addEventListener('click',()=>this.buyShepherd(b.dataset.sh)));
+    host.querySelectorAll('[data-eq]').forEach(b=>b.addEventListener('click',()=>this.buyShepherd(b.dataset.eq)));
+    host.querySelectorAll('[data-gate]').forEach(b=>b.addEventListener('click',()=>this.buyGate(b.dataset.gate)));
+    host.querySelectorAll('[data-supply]').forEach(b=>b.addEventListener('click',()=>this.toggleSupply()));
+    host.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>this.buyStageUnlock(+b.dataset.stage)));
+    if(this.dom.shopWallet){const w=sv.wallet;this.dom.shopWallet.innerHTML='🪙 '+w.coins+'   📖 '+w.chapter_points+'   🔑 '+w.unlock_tokens;}}
   toggleFx(){this.fxOn=!this.fxOn;this.save.settings.fx=this.fxOn;Save.save();this.updateFxLabel();}
   updateFxLabel(){if(this.dom&&this.dom.fxBtn)this.dom.fxBtn.textContent=this.fxOn?'✨ 이펙트: 가득':'🔅 이펙트: 줄임';}
   togglePause(){if(this.paused)this.resume();else this.pause();}
@@ -531,7 +636,9 @@ class Game{
     this.canvas.style.width=w+'px';this.canvas.style.height=h+'px';this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);this.scale=(w*dpr)/VW;}
   toV(cx,cy){const r=this.canvas.getBoundingClientRect();return{x:(cx-r.left)/r.width*VW,y:(cy-r.top)/r.height*VH};}
 
-  initRun(){this.props=this.genProps();this.rs=new RunState(this.stage);this.player=new Player(VW/2,this.rs);this.sheep=[];this.wolves=[];this.shots=[];this.gates=[];this.stonePickups=[];this.boss=null;this.result=null;
+  initRun(){this.props=this.genProps();this.rs=new RunState(this.stage);this.applyShepherd();
+    if(this._supply){this.rs.stones=Math.min(this.rs.stoneMax,this.rs.stones+12);this.rs.shield+=1;}
+    this.player=new Player(VW/2,this.rs);this.sheep=[];this.wolves=[];this.shots=[];this.gates=[];this.stonePickups=[];this.boss=null;this.result=null;
     this.gatePlan=this.genGatePlan();this.enemyPlan=this.genEnemyPlan();this.stonePlan=this.genStonePlan();
     this.spawned={gate:this.gatePlan.map(()=>false),enemy:this.enemyPlan.map(()=>false),stone:this.stonePlan.map(()=>false),boss:false};this.slingT=0;this.staffT=0;this.floaters=[];this.particles.l.length=0;
     for(let i=0;i<this.rs.initialSheep;i++){const s=this.slot(i);this.sheep.push(new Sheep(s.x,s.y));}}
@@ -539,8 +646,10 @@ class Game{
   // Roguelike: random balanced gate pairs along the whole level.
   genGatePlan(){const plan=[],bossY=this.stage.length;let y=460;
     while(y<bossY-500){plan.push({y,...this.pickPair()});y+=rnd(620,900);}return plan;}
-  pickPair(){const a=this.wPick(GATE_POOL);let b,tries=0;
-    do{b=this.wPick(GATE_POOL);tries++;}while((b.id===a.id||b.cat===a.cat)&&tries<10);
+  // active draft pool = base gates + any locked gates unlocked in the shop
+  activeGates(){const owned=this.save.owned.gates||[];return GATE_POOL.filter(g=>!g.locked||owned.includes(g.id));}
+  pickPair(){const pool=this.activeGates();const a=this.wPick(pool);let b,tries=0;
+    do{b=this.wPick(pool);tries++;}while((b.id===a.id||b.cat===a.cat)&&tries<10);
     return {left:a,right:b};}
   wPick(pool){let tot=0;for(const g of pool)tot+=g.w;let r=Math.random()*tot;for(const g of pool){r-=g.w;if(r<=0)return g;}return pool[0];}
   // Fixed wolf guards spread across the level; HP scales gently with depth.
@@ -556,6 +665,8 @@ class Game{
     while(y<bossY-300){plan.push({y,x:(0.16+Math.random()*0.68)*VW,v:3});y+=rnd(sp.stoneGapMin,sp.stoneGapMax);}return plan;}
   start(idx){if(typeof idx==='number'&&STAGES[idx]&&this.stageUnlocked(idx)){this.curStageIdx=idx;this.stage=STAGES[idx];this.refreshPalette();}
     this.audio.init();this.audio.resume();this.paused=false;if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}
+    // optional per-run starting supply (coins spent each run, not permanent)
+    this._supply=false;if(this.save.settings.supply&&this.save.wallet.coins>=SUPPLY_COST){this.save.wallet.coins-=SUPPLY_COST;this._supply=true;Save.save();this.updateWallet();}
     this.initRun();this.rs.status='running';this.dom.start.classList.add('hidden');this.dom.start.classList.remove('show');
     this.dom.result.classList.add('hidden');this.dom.result.classList.remove('show');this.dom.hud.classList.remove('hidden');}
   shake(m,t){this.shakeMag=Math.max(this.shakeMag,m);this.shakeT=Math.max(this.shakeT,t);}
@@ -849,8 +960,9 @@ class Game{
     // staff
     const a=this.project(X+0.34,0.1,Z+0.05),b=this.project(X+0.42,1.5+yo,Z+0.05);if(a&&b){ctx.strokeStyle='#caa15a';ctx.lineWidth=Math.max(2,0.06*a.scale);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
     const hurt=p.hurt>0&&((p.hurt*20|0)%2===0);
-    // torso
-    const tp=this.part(ctx,X,0.72+yo,Z,0.34,hurt?'#fff':'#2c55b8',hurt?'#fff':'#5b8cf0',0.42);if(!hurt)this.rim(ctx,tp,0.4);
+    // torso (colour from equipped shepherd skin)
+    const sc=(this.shepherd&&this.shepherd.color)||{base:'#2c55b8',lite:'#5b8cf0'};
+    const tp=this.part(ctx,X,0.72+yo,Z,0.34,hurt?'#fff':sc.base,hurt?'#fff':sc.lite,0.42);if(!hurt)this.rim(ctx,tp,0.4);
     // head
     this.part(ctx,X,1.18+yo,Z,0.21,hurt?'#fff':'#e8b98c','#ffd9b0');
     // hair
