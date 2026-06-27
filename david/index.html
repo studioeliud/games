@@ -67,6 +67,22 @@
   .rewards{font-size:14px;margin-top:2px;}
   .ach{font-size:14px;color:#bfe4ff;margin-top:2px;}
   .panelbox{position:relative;max-width:380px;width:100%;}
+  /* palette (tone) swatches */
+  .swatchRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;pointer-events:auto;}
+  .swLabel{font-size:12px;color:#cfcfcf;letter-spacing:.08em;margin-top:14px;opacity:.85;}
+  .sw{position:relative;width:62px;height:42px;border-radius:10px;border:2px solid rgba(255,255,255,.25);cursor:pointer;
+    overflow:hidden;padding:0;box-shadow:0 3px 9px rgba(0,0,0,.4);transition:transform .1s,border-color .1s;}
+  .sw>span{position:absolute;left:0;right:0;bottom:0;font-size:10px;font-weight:800;color:#fff;
+    background:rgba(0,0,0,.42);padding:2px 0;text-shadow:0 1px 2px rgba(0,0,0,.8);}
+  .sw:hover{transform:translateY(-2px);}
+  .sw.on{border-color:#ffe06a;box-shadow:0 0 0 2px rgba(255,224,106,.5),0 3px 9px rgba(0,0,0,.4);}
+  /* pause */
+  #pauseBtn{position:absolute;top:14px;right:60px;font-size:18px;pointer-events:auto;cursor:pointer;opacity:.85;}
+  #pauseScreen .scrim{background:rgba(0,0,0,.6);}
+  #pauseCard{position:relative;display:flex;flex-direction:column;align-items:center;width:86%;max-width:340px;
+    background:linear-gradient(180deg,rgba(28,38,30,.96),rgba(18,26,20,.96));border:1px solid rgba(255,255,255,.14);
+    border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  #pauseCard h2{font-size:24px;color:#fff;margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -76,6 +92,7 @@
   <div id="hud" class="hidden">
     <div id="progTop"><i id="progFill"></i><span id="progBear">▲</span></div>
     <div id="mute">🔊</div>
+    <div id="pauseBtn">⏸</div>
     <div class="card" id="leftCard">
       <div class="hearts" id="hHp"></div>
       <div class="sheepLine">양 <b id="hSheep">8</b><span id="hSheepMax" style="opacity:.7"> / 8</span></div>
@@ -102,8 +119,20 @@
       <h1>다윗<br><span class="accent">양치기 소년</span></h1>
       <div class="sub">1장 · 양치기들의 들판 — 3D</div>
       <button class="play" id="startBtn">시작하기</button>
-      <div class="hint">드래그 · A/D · ← →  로 이동<br>양 떼를 지키고 곰을 물리치세요</div>
+      <div class="swLabel">화면 톤</div>
+      <div class="swatchRow" id="titleSwatches"></div>
+      <div class="hint">드래그 · A/D · ← →  로 이동<br>양 떼를 지키고 곰을 물리치세요 · P 일시정지</div>
       <div class="hint" id="bestLine"></div>
+    </div>
+  </div>
+
+  <div id="pauseScreen" class="overlay hidden">
+    <div class="scrim"></div>
+    <div id="pauseCard" class="panelbox">
+      <h2>일시정지</h2>
+      <div class="swLabel">화면 톤</div>
+      <div class="swatchRow" id="pauseSwatches"></div>
+      <button class="play" id="resumeBtn" style="margin-top:18px">계속하기</button>
     </div>
   </div>
 
@@ -137,6 +166,58 @@ const DATA = {
     {id:'collect_100_stones',label:'돌 100개 모으기',c:s=>s.stones>=100} ],
   stars:{three:{sheep:0.8,hp:0.5},two:{sheep:0.5,hp:0},one:{sheep:0,hp:0}},
 };
+
+// ----------------------------- PALETTES ------------------------------
+// Every drawWorld() colour lives here so visuals, parallax (stage 2) and
+// stages/biomes (stage 3) all share one data source. Each palette defines:
+//   sky[]        gradient stops top->horizon
+//   glow         {c, x, y, r} sun/moon disc + halo (x,y are 0..1 of screen/horizon)
+//   hills[]      far->near ridge colours (3 layers; stage 2 parallax uses all)
+//   ground[]     gradient stops horizon->bottom
+//   gridAlpha    lateral grid line opacity
+//   pathColor    centre dirt path tint
+//   lightDir     {x,y} normalised rim-light direction (stage 2)
+//   lightColor   rim-light colour prefix "rgba(r,g,b,"
+//   fogColor     atmospheric fade colour for far distance (stage 2)
+//   gradeTint    {c, a} full-screen colour-grade overlay (stage 2 post)
+//   moteColor    light-dust particle tint prefix "rgba(r,g,b,"
+// All four are contrast-checked so approaching wolves/bear/gates stay readable.
+const PALETTES = {
+  midday: {            // 기본값: 맑고 밝은 한낮, 채도 높게
+    name:'한낮', swatch:'#7ec8ff',
+    sky:['#7ec8ff','#aee0ef','#d9f0c6'], glow:{c:'255,250,210', x:0.70, y:0.40, r:62},
+    hills:['#a6cda3','#7fae74','#5e9a4e'], ground:['#5e9a3e','#396d24'],
+    gridAlpha:0.10, pathColor:'rgba(150,115,70,.18)',
+    lightDir:{x:-0.5,y:-0.85}, lightColor:'rgba(255,250,220,', fogColor:'#cfe8d6',
+    gradeTint:{c:'255,246,224', a:0.05}, moteColor:'rgba(255,255,235,',
+  },
+  golden_hour: {       // 늦은 오후/저무는 햇살, 따뜻한 황금빛
+    name:'황혼녘', swatch:'#ffb27a',
+    sky:['#8fa7c8','#f4b56b','#ffd9a0'], glow:{c:'255,210,140', x:0.68, y:0.60, r:96},
+    hills:['#c2a585','#9c7e5c','#7a5f44'], ground:['#b9923f','#7d6128'],
+    gridAlpha:0.08, pathColor:'rgba(120,80,40,.22)',
+    lightDir:{x:0.6,y:-0.6}, lightColor:'rgba(255,200,130,', fogColor:'#e8c79a',
+    gradeTint:{c:'255,181,90', a:0.12}, moteColor:'rgba(255,220,150,',
+  },
+  overcast: {          // 흐림/폭풍 전야, 탈채도 회청색, 드라마틱
+    name:'흐림', swatch:'#9aa6ad',
+    sky:['#9aa6ad','#aeb6ba','#c4c8c2'], glow:{c:'225,230,228', x:0.50, y:0.30, r:120},
+    hills:['#7c8a8d','#5c696b','#46504f'], ground:['#5f7250','#445737'],
+    gridAlpha:0.07, pathColor:'rgba(90,90,85,.22)',
+    lightDir:{x:0.0,y:-1.0}, lightColor:'rgba(210,220,225,', fogColor:'#b7c0c0',
+    gradeTint:{c:'128,144,160', a:0.14}, moteColor:'rgba(200,210,210,',
+  },
+  dusk: {              // 황혼/야간, 인디고->노을, 달빛/반딧불 (가독성 주의)
+    name:'황혼', swatch:'#5a3f74',
+    sky:['#1f2b54','#5a3f74','#c8688a'], glow:{c:'255,180,160', x:0.72, y:0.50, r:84},
+    hills:['#3a3458','#2c2742','#201d30'], ground:['#46545c','#2b3540'],
+    gridAlpha:0.13, pathColor:'rgba(120,110,150,.20)',
+    lightDir:{x:0.4,y:-0.8}, lightColor:'rgba(180,200,255,', fogColor:'#2a2f4a',
+    gradeTint:{c:'58,42,90', a:0.16}, moteColor:'rgba(190,210,255,',
+  },
+};
+const PALETTE_ORDER = ['midday','golden_hour','overcast','dusk'];
+const DEFAULT_PALETTE = 'midday';
 
 // Roguelike gate pool. Each run draws balanced pairs from this. `cat` keeps a
 // pair offering two different kinds of upgrades; risk gates trade a downside for
@@ -256,18 +337,39 @@ class RunState{constructor(){const s=DATA.level.stats;Object.assign(this,{hp:s.h
 class Game{
   constructor(){this.canvas=document.getElementById('game');this.ctx=this.canvas.getContext('2d');this.audio=A;this.particles=new Particles();
     this.shakeT=0;this.shakeMag=0;this.flashT=0;this.flashCol='#fff';this.floaters=[];this.best=+(localStorage.getItem('david3d_best')||0);
+    this.palId=localStorage.getItem('david3d_palette')||DEFAULT_PALETTE;if(!PALETTES[this.palId])this.palId=DEFAULT_PALETTE;this.pal=PALETTES[this.palId];
+    this.paused=false;this.prevStatus=null;
     this.props=this.genProps();this.titleT=0;this.input=new Input(this);
     this.dom={hud:document.getElementById('hud'),start:document.getElementById('startScreen'),result:document.getElementById('resultScreen'),
       hp:document.getElementById('hHp'),sheep:document.getElementById('hSheep'),sheepMax:document.getElementById('hSheepMax'),sling:document.getElementById('hSling'),stones:document.getElementById('hStones'),
       shield:document.getElementById('hShield'),wolves:document.getElementById('hWolves'),score:document.getElementById('hScore'),combo:document.getElementById('comboBadge'),
       prog:document.getElementById('progFill'),progBear:document.getElementById('progBear'),bossCard:document.getElementById('bossCard'),bossFill:document.querySelector('#bossBar>i'),bossLabel:document.getElementById('bossLabel'),
-      resultBody:document.getElementById('resultBody'),best:document.getElementById('bestLine'),mute:document.getElementById('mute')};
+      resultBody:document.getElementById('resultBody'),best:document.getElementById('bestLine'),mute:document.getElementById('mute'),
+      pauseBtn:document.getElementById('pauseBtn'),pauseScreen:document.getElementById('pauseScreen'),
+      titleSw:document.getElementById('titleSwatches'),pauseSw:document.getElementById('pauseSwatches')};
     this.resize();window.addEventListener('resize',()=>this.resize());
     document.getElementById('startBtn').addEventListener('click',()=>this.start());
     document.getElementById('againBtn').addEventListener('click',()=>this.start());
     this.dom.mute.addEventListener('click',()=>{this.audio.muted=!this.audio.muted;this.dom.mute.textContent=this.audio.muted?'🔇':'🔊';});
+    if(this.dom.pauseBtn)this.dom.pauseBtn.addEventListener('click',()=>this.togglePause());
+    const rb=document.getElementById('resumeBtn');if(rb)rb.addEventListener('click',()=>this.resume());
+    this.buildPaletteUI();
     if(this.best>0)this.dom.best.textContent='최고 점수: '+this.best;
     this.initRun();}
+
+  // ---- palette selection (title + pause), persisted in localStorage ----
+  buildPaletteUI(){const make=host=>{if(!host)return;host.innerHTML='';for(const id of PALETTE_ORDER){const p=PALETTES[id];
+    const b=document.createElement('button');b.className='sw'+(id===this.palId?' on':'');b.dataset.pal=id;b.title=p.name;
+    b.style.background=p.swatch;b.innerHTML='<span>'+p.name+'</span>';
+    b.addEventListener('click',()=>this.setPalette(id));host.appendChild(b);}};
+    make(this.dom.titleSw);make(this.dom.pauseSw);}
+  setPalette(id){if(!PALETTES[id])return;this.palId=id;this.pal=PALETTES[id];try{localStorage.setItem('david3d_palette',id);}catch(e){}
+    for(const host of [this.dom.titleSw,this.dom.pauseSw]){if(!host)continue;for(const b of host.children)b.classList.toggle('on',b.dataset.pal===id);}}
+  togglePause(){if(this.paused)this.resume();else this.pause();}
+  pause(){if(this.paused)return;const s=this.rs.status;if(s!=='running'&&s!=='boss')return;this.paused=true;this.prevStatus=s;
+    if(this.dom.pauseScreen){this.dom.pauseScreen.classList.remove('hidden');this.dom.pauseScreen.classList.add('show');}}
+  resume(){if(!this.paused)return;this.paused=false;
+    if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}}
 
   genProps(){_seed=42;const a=[],len=DATA.level.length+400;for(let i=0;i<90;i++){a.push({y:srnd()*len-150,x:(srnd()*2-1)*(TRACK_HALF+1.1),k:srnd()<.5?'tuft':(srnd()<.6?'flower':'rock'),s:.7+srnd()*.7,c:srnd()});}return a;}
   resize(){const dpr=window.devicePixelRatio||1,aw=window.innerWidth,ah=window.innerHeight;let w=aw,h=w/(VW/VH);if(h>ah){h=ah;w=h*(VW/VH);}
@@ -298,7 +400,8 @@ class Game{
   // Collectible stone piles scattered down the field; player must steer onto them.
   genStonePlan(){const plan=[],bossY=DATA.level.boss.y;let y=520;
     while(y<bossY-300){plan.push({y,x:(0.16+Math.random()*0.68)*VW,v:3});y+=rnd(270,460);}return plan;}
-  start(){this.audio.init();this.audio.resume();this.initRun();this.rs.status='running';this.dom.start.classList.add('hidden');this.dom.start.classList.remove('show');
+  start(){this.audio.init();this.audio.resume();this.paused=false;if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}
+    this.initRun();this.rs.status='running';this.dom.start.classList.add('hidden');this.dom.start.classList.remove('show');
     this.dom.result.classList.add('hidden');this.dom.result.classList.remove('show');this.dom.hud.classList.remove('hidden');}
   shake(m,t){this.shakeMag=Math.max(this.shakeMag,m);this.shakeT=Math.max(this.shakeT,t);}
   flash(c,t){this.flashCol=c;this.flashT=t;}
@@ -314,7 +417,7 @@ class Game{
     return {x:VW/2+FOCAL*x/z2, y:VH/2-FOCAL*y2/z2, scale:FOCAL/z2, z:z2};}
 
   // ============================ UPDATE =============================
-  update(dt){this.titleT+=dt;
+  update(dt){if(this.paused)return;this.titleT+=dt;
     if(this.shakeT>0){this.shakeT-=dt;if(this.shakeT<=0)this.shakeMag=0;}
     if(this.flashT>0)this.flashT-=dt;this.particles.update(dt);
     const st=this.rs.status;
@@ -354,7 +457,7 @@ class Game{
         for(let i=0;i<fire;i++){const px=sx+i*step;this.shots.push(new Shot(px,this.player.worldY+18,pd));}}}}
     if(this.staffT<=0){let hit=false;const px=this.player.x,py=this.player.worldY,rg=rs.staffRange;
       for(const w of this.wolves){if(w.alive&&dist(px,py,w.x,w.worldY)<=rg+w.d.radius){if(w.hurt(rs.staffDamage))this.onWolfKill(w);else this.audio.hit();hit=true;this.fxAt(w.x,0.5,this.wz3(w.worldY),5,'#fff2c4');}}
-      if(this.boss&&this.boss.alive&&dist(px,py,this.boss.x,this.boss.worldY)<=rg+this.boss.d.radius){if(this.boss.hurt(rs.staffDamage))this.onBossKill();else this.audio.bossHit();hit=true;this.fxAt(this.boss.x,1,this.wz3(this.boss.worldY),6,'#ffd9b0');this._dmg('-'+Math.round(rs.staffDamage),this.boss.x,this.boss.worldY);}
+      {const bb=this.boss;if(bb&&bb.alive&&dist(px,py,bb.x,bb.worldY)<=rg+bb.d.radius){const killed=bb.hurt(rs.staffDamage);hit=true;this.fxAt(bb.x,1,this.wz3(bb.worldY),6,'#ffd9b0');this._dmg('-'+Math.round(rs.staffDamage),bb.x,bb.worldY);if(killed)this.onBossKill();else this.audio.bossHit();}}
       if(hit){this.staffT=rs.staffCooldown;this.player.staff=.18;}}
     for(const s of this.shots)s.update(dt);
     for(const s of this.shots){if(!s.alive)continue;
@@ -459,25 +562,29 @@ class Game{
     const vg=ctx.createRadialGradient(VW/2,VH*0.55,VH*0.3,VW/2,VH*0.55,VH*0.8);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.32)');ctx.fillStyle=vg;ctx.fillRect(0,0,VW,VH);}
 
   drawWorld(ctx){
+    const pal=this.pal;
     const hz=this.project(0,0,400),horizon=hz?clamp(hz.y,0,VH):VH*0.36;
-    // sky
-    const sky=ctx.createLinearGradient(0,0,0,horizon);sky.addColorStop(0,'#aee3ff');sky.addColorStop(.6,'#cde7c9');sky.addColorStop(1,'#dff0c0');
+    // sky (palette gradient)
+    const sky=ctx.createLinearGradient(0,0,0,horizon);const sk=pal.sky;
+    for(let i=0;i<sk.length;i++)sky.addColorStop(i/(sk.length-1),sk[i]);
     ctx.fillStyle=sky;ctx.fillRect(0,0,VW,horizon+1);
-    // sun
-    ctx.save();ctx.globalAlpha=.8;const sg=ctx.createRadialGradient(VW*0.7,horizon*0.4,4,VW*0.7,horizon*0.4,60);sg.addColorStop(0,'rgba(255,250,210,.95)');sg.addColorStop(1,'rgba(255,250,210,0)');ctx.fillStyle=sg;ctx.fillRect(VW*0.7-60,horizon*0.4-60,120,120);ctx.restore();
-    // distant hills
-    ctx.fillStyle='#7fae74';ctx.beginPath();ctx.moveTo(0,horizon);for(let i=0;i<=8;i++){const x=i/8*VW;ctx.lineTo(x,horizon-14-12*Math.sin(i*1.3+2));}ctx.lineTo(VW,horizon);ctx.closePath();ctx.fill();
-    // ground
-    const gr=ctx.createLinearGradient(0,horizon,0,VH);gr.addColorStop(0,'#5e9a3e');gr.addColorStop(1,'#3c7026');ctx.fillStyle=gr;ctx.fillRect(0,horizon,VW,VH-horizon);
+    // sun/moon glow (palette)
+    ctx.save();ctx.globalAlpha=.85;const gx=VW*pal.glow.x,gy=horizon*pal.glow.y,gr0=pal.glow.r;
+    const sg=ctx.createRadialGradient(gx,gy,4,gx,gy,gr0);sg.addColorStop(0,'rgba('+pal.glow.c+',.95)');sg.addColorStop(1,'rgba('+pal.glow.c+',0)');
+    ctx.fillStyle=sg;ctx.fillRect(gx-gr0,gy-gr0,gr0*2,gr0*2);ctx.restore();
+    // distant hills (single ridge here; stage 2 expands to parallax layers)
+    ctx.fillStyle=pal.hills[1];ctx.beginPath();ctx.moveTo(0,horizon);for(let i=0;i<=8;i++){const x=i/8*VW;ctx.lineTo(x,horizon-14-12*Math.sin(i*1.3+2));}ctx.lineTo(VW,horizon);ctx.closePath();ctx.fill();
+    // ground (palette gradient)
+    const gr=ctx.createLinearGradient(0,horizon,0,VH);gr.addColorStop(0,pal.ground[0]);gr.addColorStop(1,pal.ground[1]);ctx.fillStyle=gr;ctx.fillRect(0,horizon,VW,VH-horizon);
     // perspective grid (lateral lines scrolling)
-    const frac=(this.player.worldY*FWD)%1;ctx.strokeStyle='rgba(255,255,255,.10)';ctx.lineWidth=1.5;
+    const frac=(this.player.worldY*FWD)%1;ctx.strokeStyle='rgba(255,255,255,'+pal.gridAlpha+')';ctx.lineWidth=1.5;
     for(let k=1;k<=26;k++){const z=k-frac;const a=this.project(-TRACK_HALF*1.6,0,z),b=this.project(TRACK_HALF*1.6,0,z);if(a&&b){ctx.globalAlpha=clamp(1-z/26,.15,1)*.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
     ctx.globalAlpha=1;
     // longitudinal lanes
     for(const xx of [-TRACK_HALF,-TRACK_HALF/2,0,TRACK_HALF/2,TRACK_HALF]){const a=this.project(xx,0,0.1),b=this.project(xx,0,26);if(a&&b){ctx.strokeStyle=Math.abs(xx)>=TRACK_HALF-0.01?'rgba(255,255,255,.30)':'rgba(255,255,255,.08)';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
     // dirt path center
     const pa=this.project(-0.7,0,0.1),pb=this.project(0.7,0,0.1),pc=this.project(0.45,0,26),pd=this.project(-0.45,0,26);
-    if(pa&&pb&&pc&&pd){ctx.fillStyle='rgba(150,115,70,.18)';ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pc.x,pc.y);ctx.lineTo(pd.x,pd.y);ctx.closePath();ctx.fill();}
+    if(pa&&pb&&pc&&pd){ctx.fillStyle=this.pal.pathColor;ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.lineTo(pc.x,pc.y);ctx.lineTo(pd.x,pd.y);ctx.closePath();ctx.fill();}
     // props (ground decoration)
     const ps=this.props.map(p=>({p,z:p.y-this.player.worldY})).filter(o=>o.z>0.2&&o.z<1900).sort((a,b)=>b.z-a.z);
     for(const o of ps){const pr=this.project(o.p.x,0,o.z*FWD);if(pr)this.drawProp(ctx,o.p,pr);}
@@ -590,7 +697,7 @@ class Game{
 
 // ----------------------------- INPUT ---------------------------------
 class Input{constructor(g){this.pointer=false;this.px=VW/2;this.dir=0;this._l=false;this._r=false;const c=g.canvas;
-  const down=(x,y)=>{if(g.rs.status==='ready'||g.rs.status==='win'||g.rs.status==='fail')return;this.pointer=true;this.px=g.toV(x,y).x;};
+  const down=(x,y)=>{if(g.paused||g.rs.status==='ready'||g.rs.status==='win'||g.rs.status==='fail')return;this.pointer=true;this.px=g.toV(x,y).x;};
   const move=(x,y)=>{if(this.pointer)this.px=g.toV(x,y).x;};const up=()=>{this.pointer=false;};
   c.addEventListener('mousedown',e=>down(e.clientX,e.clientY));window.addEventListener('mousemove',e=>move(e.clientX,e.clientY));window.addEventListener('mouseup',up);
   c.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];down(t.clientX,t.clientY);},{passive:false});
@@ -598,6 +705,7 @@ class Input{constructor(g){this.pointer=false;this.px=VW/2;this.dir=0;this._l=fa
   c.addEventListener('touchend',e=>{e.preventDefault();up();},{passive:false});
   window.addEventListener('keydown',e=>{if(e.code==='ArrowLeft'||e.code==='KeyA')this._l=true;if(e.code==='ArrowRight'||e.code==='KeyD')this._r=true;
     if((e.code==='Enter'||e.code==='Space')&&(g.rs.status==='ready'||g.rs.status==='win'||g.rs.status==='fail'))g.start();
+    if(e.code==='KeyP'||e.code==='Escape')g.togglePause();
     if(e.code==='KeyM'){g.audio.muted=!g.audio.muted;g.dom.mute.textContent=g.audio.muted?'🔇':'🔊';}this.dir=(this._r?1:0)-(this._l?1:0);});
   window.addEventListener('keyup',e=>{if(e.code==='ArrowLeft'||e.code==='KeyA')this._l=false;if(e.code==='ArrowRight'||e.code==='KeyD')this._r=false;this.dir=(this._r?1:0)-(this._l?1:0);});}}
 
