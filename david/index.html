@@ -86,6 +86,17 @@
   .fxToggle{margin-top:16px;pointer-events:auto;cursor:pointer;border:1px solid rgba(255,255,255,.25);
     background:rgba(255,255,255,.08);color:#eafce0;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:700;}
   .fxToggle:hover{background:rgba(255,255,255,.16);}
+  /* stage select list */
+  .stageList{display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px;margin:6px auto 0;pointer-events:auto;}
+  .stageBtn{display:flex;align-items:center;gap:11px;width:100%;cursor:pointer;text-align:left;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:11px 14px;
+    color:#fff;font-weight:700;font-size:15px;transition:transform .1s,background .12s,border-color .12s;}
+  .stageBtn:hover{transform:translateY(-2px);background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.32);}
+  .stageBtn .biome{width:16px;height:16px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 2px rgba(255,255,255,.25);}
+  .stageBtn .nm{flex:1 1 auto;}
+  .stageBtn .tag{font-size:11px;font-weight:800;letter-spacing:.06em;color:#ffe06a;opacity:.95;}
+  .stageBtn.locked{opacity:.45;cursor:not-allowed;}
+  .stageBtn.locked:hover{transform:none;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);}
 </style>
 </head>
 <body>
@@ -120,11 +131,12 @@
     <div class="scrim"></div>
     <div id="title" class="panelbox">
       <h1>다윗<br><span class="accent">양치기 소년</span></h1>
-      <div class="sub">1장 · 양치기들의 들판 — 3D</div>
-      <button class="play" id="startBtn">시작하기</button>
+      <div class="sub" id="subtitle">양 떼를 지키고 곰을 물리치세요 — 3D</div>
+      <div class="swLabel">스테이지 선택</div>
+      <div id="stageSelect" class="stageList"></div>
       <div class="swLabel">화면 톤</div>
       <div class="swatchRow" id="titleSwatches"></div>
-      <div class="hint">드래그 · A/D · ← →  로 이동<br>양 떼를 지키고 곰을 물리치세요 · P 일시정지</div>
+      <div class="hint">드래그 · A/D · ← →  로 이동 · P 일시정지</div>
       <div class="hint" id="bestLine"></div>
     </div>
   </div>
@@ -170,6 +182,34 @@ const DATA = {
     {id:'collect_100_stones',label:'돌 100개 모으기',c:s=>s.stones>=100} ],
   stars:{three:{sheep:0.8,hp:0.5},two:{sheep:0.5,hp:0},one:{sheep:0,hp:0}},
 };
+
+// --------------------------- STAGES ----------------------------------
+// Shared starting kit — every stage begins with the SAME build so that the
+// player's gate choices (not the stage) decide the boss fight (principle 3).
+const BASE_STATS = {hp:5,maxHp:5,slingProjectiles:1,slingDamage:10,slingCooldown:0.5,staffDamage:10,staffRange:58,staffCooldown:0.45,stones:10,stoneRegen:1.1,stoneMax:40};
+const BASE_STARS = {three:{sheep:0.8,hp:0.5},two:{sheep:0.5,hp:0},one:{sheep:0,hp:0}};
+// Bear template; each stage's boss is a stat/reskin variant of this.
+const BEAR_BASE = {radius:44,moveSpeed:92,approach:62,charge:380,chargeCD:1.35,windup:0.45,contact:60,dmg:2,sheepHit:2,armor:0.42};
+const bear=(o)=>Object.assign({},BEAR_BASE,o);
+// REVIEW MODE: every stage is freely selectable while tuning. The sequential
+// unlock model below is fully implemented (stagesCleared gating); flip this to
+// false later and locks engage with zero rework.
+const REVIEW_UNLOCK_ALL = true;
+// A stage = one biome (palette) + balance. Add a stage = add one entry here.
+const STAGES = [
+  { id:'fields', name:'양치기들의 들판', palette:'midday', length:11000, runSpeed:165, speedRamp:0.8, initialSheep:8,
+    spawn:{gapMin:360,gapMax:620,packChance:0.28,hpBase:12,hpRamp:120,eliteAfterY:2000,eliteRate:0.10,stoneGapMin:280,stoneGapMax:460},
+    boss:bear({hp:900,label:'곰'}), stars:BASE_STARS, rewardMult:1.0 },
+  { id:'barley', name:'황금빛 보리밭', palette:'golden_hour', length:13000, runSpeed:175, speedRamp:0.9, initialSheep:8,
+    spawn:{gapMin:330,gapMax:560,packChance:0.34,hpBase:16,hpRamp:150,eliteAfterY:1600,eliteRate:0.15,stoneGapMin:270,stoneGapMax:450},
+    boss:bear({hp:1100,label:'성난 곰'}), stars:BASE_STARS, rewardMult:1.2 },
+  { id:'moor', name:'폭풍 전의 황야', palette:'overcast', length:14500, runSpeed:185, speedRamp:1.0, initialSheep:7,
+    spawn:{gapMin:300,gapMax:520,packChance:0.40,hpBase:20,hpRamp:180,eliteAfterY:1400,eliteRate:0.20,stoneGapMin:260,stoneGapMax:440},
+    boss:bear({hp:1300,chargeCD:1.2,label:'잿빛 곰',col:{base:'#5a5550',lite:'#9a948c'}}), stars:BASE_STARS, rewardMult:1.45 },
+  { id:'vale', name:'달빛 골짜기', palette:'dusk', length:16000, runSpeed:195, speedRamp:1.1, initialSheep:7,
+    spawn:{gapMin:280,gapMax:480,packChance:0.45,hpBase:24,hpRamp:210,eliteAfterY:1100,eliteRate:0.26,stoneGapMin:250,stoneGapMax:430},
+    boss:bear({hp:1500,chargeCD:1.1,moveSpeed:104,label:'그림자 곰',col:{base:'#2e2a40',lite:'#6a6488'}}), stars:BASE_STARS, rewardMult:1.7 },
+];
 
 // ----------------------------- PALETTES ------------------------------
 // Every drawWorld() colour lives here so visuals, parallax (stage 2) and
@@ -319,7 +359,7 @@ class Wolf{constructor(x,y,hp,elite){const d=DATA.wolf;this.x=x;this.worldY=y;th
   hurt(a){this.hp-=a;this.flash=.12;if(this.hp<=0){this.alive=false;return true;}return false;}
   // Wolves hold their ground (they guard a spot); the world scrolls toward them.
   update(dt,g){if(this.flash>0)this.flash-=dt;this.bob+=dt*5;this.x=this.x0+Math.sin(this.bob*0.5)*4;}}
-class Boss{constructor(x,y){const d=DATA.bear;this.x=x;this.worldY=y;this.d=d;this.hp=d.hp;this.maxHp=d.hp;this.alive=true;this.state='approach';this.timer=d.chargeCD;this.windup=0;this.cc=0;this.flash=0;this.tx=x;}
+class Boss{constructor(x,y,def){const d=def||DATA.bear;this.x=x;this.worldY=y;this.d=d;this.hp=d.hp;this.maxHp=d.hp;this.alive=true;this.state='approach';this.timer=d.chargeCD;this.windup=0;this.cc=0;this.flash=0;this.tx=x;}
   // Armored (reduced damage) while winding up / charging — caps burst so a
   // strong build can't melt it instantly; vulnerable while tracking.
   hurt(a){if(this.state==='windup'||this.state==='charge')a*=(1-(this.d.armor||0));this.hp-=a;this.flash=.1;if(this.hp<=0){this.alive=false;return true;}return false;}
@@ -339,7 +379,7 @@ class StonePickup{constructor(x,y,v){this.x=x;this.worldY=y;this.v=v;this.alive=
   update(dt){this.bob+=dt*4;}}
 
 // --------------------------- RUN STATE -------------------------------
-class RunState{constructor(){const s=DATA.level.stats;Object.assign(this,{hp:s.hp,maxHp:s.maxHp,initialSheep:DATA.level.initialSheep,sheep:DATA.level.initialSheep,sheepLost:0,
+class RunState{constructor(stage){const s=(stage&&stage.stats)||BASE_STATS;const init=stage?stage.initialSheep:8;Object.assign(this,{hp:s.hp,maxHp:s.maxHp,initialSheep:init,sheep:init,sheepLost:0,
   slingProjectiles:s.slingProjectiles,slingDamage:s.slingDamage,slingCooldown:s.slingCooldown,stones:s.stones,stoneRegen:s.stoneRegen,stoneMax:s.stoneMax,stonesCollected:s.stones,
   staffDamage:s.staffDamage,staffRange:s.staffRange,staffCooldown:s.staffCooldown,shield:0,speedMul:1,mudTimer:0,_mud:1,progress:0,wolves:0,bossDefeated:false,score:0,combo:0,comboTimer:0,bonusCoins:0,status:'ready'});}
   changeSheep(d){if(d<0)this.sheepLost+=Math.min(this.sheep,-d);this.sheep=Math.max(0,this.sheep+d);}
@@ -352,26 +392,29 @@ class RunState{constructor(){const s=DATA.level.stats;Object.assign(this,{hp:s.h
 class Game{
   constructor(){this.canvas=document.getElementById('game');this.ctx=this.canvas.getContext('2d');this.audio=A;this.particles=new Particles();
     this.shakeT=0;this.shakeMag=0;this.flashT=0;this.flashCol='#fff';this.floaters=[];this.best=+(localStorage.getItem('david3d_best')||0);
-    this.palId=localStorage.getItem('david3d_palette')||DEFAULT_PALETTE;if(!PALETTES[this.palId])this.palId=DEFAULT_PALETTE;this.pal=PALETTES[this.palId];
+    // user-picked tone overrides the stage biome when set; else stage decides
+    this.userPal=localStorage.getItem('david3d_palette');if(this.userPal&&!PALETTES[this.userPal])this.userPal=null;
+    this.stages=STAGES;this.stagesCleared=this.loadCleared();this.curStageIdx=0;this.stage=STAGES[0];this.refreshPalette();
     this.fxOn=localStorage.getItem('david3d_fx')!=='0';this.motes=[];
     this.bloom=document.createElement('canvas');this.bloom.width=Math.round(VW*0.5);this.bloom.height=Math.round(VH*0.5);this.bctx=this.bloom.getContext('2d');
     this.paused=false;this.prevStatus=null;
-    this.props=this.genProps();this.titleT=0;this.input=new Input(this);
+    this.titleT=0;this.input=new Input(this);
     this.dom={hud:document.getElementById('hud'),start:document.getElementById('startScreen'),result:document.getElementById('resultScreen'),
       hp:document.getElementById('hHp'),sheep:document.getElementById('hSheep'),sheepMax:document.getElementById('hSheepMax'),sling:document.getElementById('hSling'),stones:document.getElementById('hStones'),
       shield:document.getElementById('hShield'),wolves:document.getElementById('hWolves'),score:document.getElementById('hScore'),combo:document.getElementById('comboBadge'),
       prog:document.getElementById('progFill'),progBear:document.getElementById('progBear'),bossCard:document.getElementById('bossCard'),bossFill:document.querySelector('#bossBar>i'),bossLabel:document.getElementById('bossLabel'),
       resultBody:document.getElementById('resultBody'),best:document.getElementById('bestLine'),mute:document.getElementById('mute'),
       pauseBtn:document.getElementById('pauseBtn'),pauseScreen:document.getElementById('pauseScreen'),
-      titleSw:document.getElementById('titleSwatches'),pauseSw:document.getElementById('pauseSwatches')};
+      titleSw:document.getElementById('titleSwatches'),pauseSw:document.getElementById('pauseSwatches'),
+      stageSel:document.getElementById('stageSelect'),subtitle:document.getElementById('subtitle')};
     this.resize();window.addEventListener('resize',()=>this.resize());
-    document.getElementById('startBtn').addEventListener('click',()=>this.start());
-    document.getElementById('againBtn').addEventListener('click',()=>this.start());
+    const sbtn=document.getElementById('startBtn');if(sbtn)sbtn.addEventListener('click',()=>this.start(this.curStageIdx));
+    document.getElementById('againBtn').addEventListener('click',()=>this.start(this.curStageIdx));
     this.dom.mute.addEventListener('click',()=>{this.audio.muted=!this.audio.muted;this.dom.mute.textContent=this.audio.muted?'🔇':'🔊';});
     if(this.dom.pauseBtn)this.dom.pauseBtn.addEventListener('click',()=>this.togglePause());
     const rb=document.getElementById('resumeBtn');if(rb)rb.addEventListener('click',()=>this.resume());
     this.dom.fxBtn=document.getElementById('fxBtn');if(this.dom.fxBtn){this.dom.fxBtn.addEventListener('click',()=>this.toggleFx());this.updateFxLabel();}
-    this.buildPaletteUI();
+    this.buildPaletteUI();this.buildStageUI();
     if(this.best>0)this.dom.best.textContent='최고 점수: '+this.best;
     this.initRun();}
 
@@ -381,8 +424,21 @@ class Game{
     b.style.background=p.swatch;b.innerHTML='<span>'+p.name+'</span>';
     b.addEventListener('click',()=>this.setPalette(id));host.appendChild(b);}};
     make(this.dom.titleSw);make(this.dom.pauseSw);}
-  setPalette(id){if(!PALETTES[id])return;this.palId=id;this.pal=PALETTES[id];try{localStorage.setItem('david3d_palette',id);}catch(e){}
-    for(const host of [this.dom.titleSw,this.dom.pauseSw]){if(!host)continue;for(const b of host.children)b.classList.toggle('on',b.dataset.pal===id);}}
+  setPalette(id){if(!PALETTES[id])return;this.userPal=id;try{localStorage.setItem('david3d_palette',id);}catch(e){}this.refreshPalette();}
+  // active palette = user override if chosen, else the current stage's biome
+  refreshPalette(){this.palId=(this.userPal&&PALETTES[this.userPal])?this.userPal:this.stage.palette;this.pal=PALETTES[this.palId];this.highlightSwatch();}
+  highlightSwatch(){if(!this.dom)return;for(const host of [this.dom.titleSw,this.dom.pauseSw]){if(!host)continue;for(const b of host.children)b.classList.toggle('on',b.dataset.pal===this.palId);}}
+  // ---- stage unlock state (stage 4 will fold this into the full save) ----
+  loadCleared(){try{const v=JSON.parse(localStorage.getItem('david3d_stages')||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+  saveCleared(){try{localStorage.setItem('david3d_stages',JSON.stringify(this.stagesCleared));}catch(e){}}
+  stageUnlocked(i){if(REVIEW_UNLOCK_ALL)return true;return i===0||this.stagesCleared.includes(STAGES[i-1].id);}
+  buildStageUI(){const host=this.dom.stageSel;if(!host)return;host.innerHTML='';
+    STAGES.forEach((s,i)=>{const open=this.stageUnlocked(i),cleared=this.stagesCleared.includes(s.id);
+      const b=document.createElement('button');b.className='stageBtn'+(open?'':' locked');b.dataset.idx=i;
+      b.innerHTML='<i class="biome" style="background:'+PALETTES[s.palette].swatch+'"></i>'+
+        '<span class="nm">'+s.name+'</span>'+
+        '<span class="tag">'+(open?(cleared?'★ 클리어':'PLAY'):'🔒')+'</span>';
+      if(open)b.addEventListener('click',()=>this.start(i));host.appendChild(b);});}
   toggleFx(){this.fxOn=!this.fxOn;try{localStorage.setItem('david3d_fx',this.fxOn?'1':'0');}catch(e){}this.updateFxLabel();}
   updateFxLabel(){if(this.dom&&this.dom.fxBtn)this.dom.fxBtn.textContent=this.fxOn?'✨ 이펙트: 가득':'🔅 이펙트: 줄임';}
   togglePause(){if(this.paused)this.resume();else this.pause();}
@@ -391,36 +447,37 @@ class Game{
   resume(){if(!this.paused)return;this.paused=false;
     if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}}
 
-  genProps(){_seed=42;const a=[],len=DATA.level.length+400;for(let i=0;i<90;i++){a.push({y:srnd()*len-150,x:(srnd()*2-1)*(TRACK_HALF+1.1),k:srnd()<.5?'tuft':(srnd()<.6?'flower':'rock'),s:.7+srnd()*.7,c:srnd()});}return a;}
+  genProps(){_seed=42;const a=[],len=this.stage.length+400;for(let i=0;i<90;i++){a.push({y:srnd()*len-150,x:(srnd()*2-1)*(TRACK_HALF+1.1),k:srnd()<.5?'tuft':(srnd()<.6?'flower':'rock'),s:.7+srnd()*.7,c:srnd()});}return a;}
   resize(){const dpr=window.devicePixelRatio||1,aw=window.innerWidth,ah=window.innerHeight;let w=aw,h=w/(VW/VH);if(h>ah){h=ah;w=h*(VW/VH);}
     const f=document.getElementById('frame');f.style.width=w+'px';f.style.height=h+'px';
     this.canvas.style.width=w+'px';this.canvas.style.height=h+'px';this.canvas.width=Math.round(w*dpr);this.canvas.height=Math.round(h*dpr);this.scale=(w*dpr)/VW;}
   toV(cx,cy){const r=this.canvas.getBoundingClientRect();return{x:(cx-r.left)/r.width*VW,y:(cy-r.top)/r.height*VH};}
 
-  initRun(){this.rs=new RunState();this.player=new Player(VW/2,this.rs);this.sheep=[];this.wolves=[];this.shots=[];this.gates=[];this.stonePickups=[];this.boss=null;this.result=null;
+  initRun(){this.props=this.genProps();this.rs=new RunState(this.stage);this.player=new Player(VW/2,this.rs);this.sheep=[];this.wolves=[];this.shots=[];this.gates=[];this.stonePickups=[];this.boss=null;this.result=null;
     this.gatePlan=this.genGatePlan();this.enemyPlan=this.genEnemyPlan();this.stonePlan=this.genStonePlan();
     this.spawned={gate:this.gatePlan.map(()=>false),enemy:this.enemyPlan.map(()=>false),stone:this.stonePlan.map(()=>false),boss:false};this.slingT=0;this.staffT=0;this.floaters=[];this.particles.l.length=0;
     for(let i=0;i<this.rs.initialSheep;i++){const s=this.slot(i);this.sheep.push(new Sheep(s.x,s.y));}}
 
   // Roguelike: random balanced gate pairs along the whole level.
-  genGatePlan(){const plan=[],bossY=DATA.level.boss.y;let y=460;
+  genGatePlan(){const plan=[],bossY=this.stage.length;let y=460;
     while(y<bossY-500){plan.push({y,...this.pickPair()});y+=rnd(620,900);}return plan;}
   pickPair(){const a=this.wPick(GATE_POOL);let b,tries=0;
     do{b=this.wPick(GATE_POOL);tries++;}while((b.id===a.id||b.cat===a.cat)&&tries<10);
     return {left:a,right:b};}
   wPick(pool){let tot=0;for(const g of pool)tot+=g.w;let r=Math.random()*tot;for(const g of pool){r-=g.w;if(r<=0)return g;}return pool[0];}
   // Fixed wolf guards spread across the level; HP scales gently with depth.
-  genEnemyPlan(){const plan=[],bossY=DATA.level.boss.y;let y=620;
-    while(y<bossY-200){const f=y/bossY;const pack=Math.random()<0.32?2:1;
-      // Weak early, ramps up steeply toward the end (≈14 HP early → ~165 late).
-      const baseHp=Math.round(14+f*f*150);
-      const elite=y>1700&&Math.random()<0.15; // tanky, threatening guards
+  // Density/HP/elite rate all come from the current stage's spawn params.
+  genEnemyPlan(){const sp=this.stage.spawn,plan=[],bossY=this.stage.length;let y=620;
+    while(y<bossY-200){const f=y/bossY;const pack=Math.random()<sp.packChance?2:1;
+      const baseHp=Math.round(sp.hpBase+f*f*sp.hpRamp);
+      const elite=y>sp.eliteAfterY&&Math.random()<sp.eliteRate; // tanky, threatening guards
       for(let k=0;k<pack;k++)plan.push({y:y+k*46,x:0.18+Math.random()*0.64,hp:elite?Math.round(baseHp*3.2):baseHp,elite});
-      y+=rnd(330,580);}return plan;}
+      y+=rnd(sp.gapMin,sp.gapMax);}return plan;}
   // Collectible stone piles scattered down the field; player must steer onto them.
-  genStonePlan(){const plan=[],bossY=DATA.level.boss.y;let y=520;
-    while(y<bossY-300){plan.push({y,x:(0.16+Math.random()*0.68)*VW,v:3});y+=rnd(270,460);}return plan;}
-  start(){this.audio.init();this.audio.resume();this.paused=false;if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}
+  genStonePlan(){const sp=this.stage.spawn,plan=[],bossY=this.stage.length;let y=520;
+    while(y<bossY-300){plan.push({y,x:(0.16+Math.random()*0.68)*VW,v:3});y+=rnd(sp.stoneGapMin,sp.stoneGapMax);}return plan;}
+  start(idx){if(typeof idx==='number'&&STAGES[idx]&&this.stageUnlocked(idx)){this.curStageIdx=idx;this.stage=STAGES[idx];this.refreshPalette();}
+    this.audio.init();this.audio.resume();this.paused=false;if(this.dom.pauseScreen){this.dom.pauseScreen.classList.add('hidden');this.dom.pauseScreen.classList.remove('show');}
     this.initRun();this.rs.status='running';this.dom.start.classList.add('hidden');this.dom.start.classList.remove('show');
     this.dom.result.classList.add('hidden');this.dom.result.classList.remove('show');this.dom.hud.classList.remove('hidden');}
   shake(m,t){this.shakeMag=Math.max(this.shakeMag,m);this.shakeT=Math.max(this.shakeT,t);}
@@ -444,7 +501,7 @@ class Game{
     if(st==='ready'){return;}
     if(st==='win'||st==='fail'){ if(this.player.dead)this.player.deadT+=dt; return; }
     this.rs.update(dt);this.player.update(dt,this);
-    if(st==='running'){const ramp=1+this.rs.progress/DATA.level.length*DATA.level.speedRamp;this.rs.progress+=DATA.level.runSpeed*ramp*this.rs.speedMul*dt;}
+    if(st==='running'){const S=this.stage;const ramp=1+this.rs.progress/S.length*S.speedRamp;this.rs.progress+=S.runSpeed*ramp*this.rs.speedMul*dt;}
 
     this.spawnStuff();
     const want=this.rs.sheep;
@@ -459,11 +516,11 @@ class Game{
     if(st!=='win'&&st!=='fail'&&this.rs.hp<=0)this.finish(false);
     this.updateHUD();}
 
-  spawnStuff(){const pr=this.rs.progress,look=820,L=DATA.level;
+  spawnStuff(){const pr=this.rs.progress,look=820,bossY=this.stage.length;
     this.gatePlan.forEach((g,i)=>{if(!this.spawned.gate[i]&&pr>g.y-look){this.spawned.gate[i]=true;this.gates.push(new Gate(g.y,g.left,g.right));}});
     this.enemyPlan.forEach((e,i)=>{if(!this.spawned.enemy[i]&&pr>e.y-look){this.spawned.enemy[i]=true;this.wolves.push(new Wolf(e.x*VW,e.y,e.hp,e.elite));}});
     this.stonePlan.forEach((s,i)=>{if(!this.spawned.stone[i]&&pr>s.y-look){this.spawned.stone[i]=true;this.stonePickups.push(new StonePickup(s.x,s.y,s.v));}});
-    if(!this.spawned.boss&&pr>=L.boss.y-200){this.spawned.boss=true;this.boss=new Boss(VW/2,this.player.worldY+330);this.rs.status='boss';this.audio.roar();this.shake(8,.4);this.flash('rgba(120,40,20,.4)',.3);}}
+    if(!this.spawned.boss&&pr>=bossY-200){this.spawned.boss=true;this.boss=new Boss(VW/2,this.player.worldY+330,this.stage.boss);this.rs.status='boss';this.audio.roar();this.shake(8,.4);this.flash('rgba(120,40,20,.4)',.3);}}
 
   combat(dt){const rs=this.rs;if(this.slingT>0)this.slingT-=dt;if(this.staffT>0)this.staffT-=dt;
     if(this.slingT<=0&&rs.stones>=1){const t=this.nearest();if(t){
@@ -526,17 +583,22 @@ class Game{
   finish(win){const rs=this.rs;const real=win&&rs.hp>0;rs.status=real?'win':'fail';
     let reason='';if(!real){this.audio.lose();this.player.dead=true;this.player.deadT=0;this.flash('rgba(150,20,20,.55)',.5);this.shake(9,.4);
       reason=this.boss?'곰에게 당하고 말았습니다!':'다윗이 쓰러졌습니다!';}
-    let stars=0;if(real){const t=DATA.stars;if(rs.sheepRatio>=t.three.sheep&&rs.hpRatio>=t.three.hp)stars=3;else if(rs.sheepRatio>=t.two.sheep)stars=2;else stars=1;}
+    let stars=0;if(real){const t=this.stage.stars;if(rs.sheepRatio>=t.three.sheep&&rs.hpRatio>=t.three.hp)stars=3;else if(rs.sheepRatio>=t.two.sheep)stars=2;else stars=1;}
     const stats={sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,win:real,stones:Math.floor(rs.stonesCollected),sheepLost:rs.sheepLost,hp:rs.hp};
-    const R=DATA.rewards,rw={coins:0,chapter_points:0,unlock_tokens:0},add=o=>{for(const k in o)rw[k]=(rw[k]||0)+o[k];};
+    const R=DATA.rewards,mult=this.stage.rewardMult||1,rw={coins:0,chapter_points:0,unlock_tokens:0},add=o=>{for(const k in o)rw[k]=(rw[k]||0)+o[k];};
     if(stars>0){add(R.base);for(let i=0;i<stars;i++)add(R.perStar);if(stars>=3)add(R.three);}
     rw.coins+=R.perWolf.coins*rs.wolves+R.perSheep.coins*rs.sheep+rs.bonusCoins;
+    rw.coins=Math.round(rw.coins*mult);rw.chapter_points=Math.round(rw.chapter_points*mult);
     const ach=DATA.achievements.filter(a=>{try{return a.c(stats)}catch(e){return false}});
     rs.score+=stars*250+rs.sheep*20;if(rs.score>this.best){this.best=rs.score;localStorage.setItem('david3d_best',this.best);}
-    this.result={win:real,stars,reason,sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,bossDefeated:rs.bossDefeated,rewards:rw,ach,score:rs.score};
+    // mark stage cleared (sequential unlock data); next stage opens when flag is off
+    let nextName=null;if(real){if(!this.stagesCleared.includes(this.stage.id)){this.stagesCleared.push(this.stage.id);this.saveCleared();this.buildStageUI();}
+      const ni=this.curStageIdx+1;if(STAGES[ni])nextName=STAGES[ni].name;}
+    this.result={win:real,stars,reason,sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,bossDefeated:rs.bossDefeated,rewards:rw,ach,score:rs.score,stageName:this.stage.name,nextName};
     this.showResult();}
 
   showResult(){const r=this.result;let h='<h1>'+(r.win?'승리!':'패배...')+'</h1>';
+    if(r.stageName)h+='<div class="sub" style="margin-top:2px">'+r.stageName+'</div>';
     if(!r.win&&r.reason)h+='<div class="reason">'+r.reason+'</div>';
     let st='';for(let i=0;i<3;i++)st+=i<r.stars?'★':'☆';h+='<div class="stars" style="color:#ffd76a">'+st+'</div>';
     h+='<div class="stat">구한 양: '+r.sheepSaved+' / '+r.initialSheep+'</div>';
@@ -546,6 +608,7 @@ class Game{
     h+='<div class="sec" style="color:#ffe7a0">보상</div>';
     for(const k in r.rewards){if(r.rewards[k]>0)h+='<div class="rewards">'+DATA.rewardLabel[k]+': +'+r.rewards[k]+'</div>';}
     if(r.ach.length){h+='<div class="sec" style="color:#a0d8ff">업적 달성</div>';for(const a of r.ach)h+='<div class="ach">✓ '+a.label+'</div>';}
+    if(r.win&&r.nextName)h+='<div class="ach" style="color:#ffe7a0;margin-top:8px">다음 스테이지: '+r.nextName+'</div>';
     this.dom.resultBody.innerHTML=h;this.dom.result.className='overlay show'+(r.win?' win':' lose');}
 
   updateHUD(){const rs=this.rs,d=this.dom;
@@ -554,9 +617,9 @@ class Game{
     d.sling.textContent='슬링 '+rs.slingProjectiles+'발·'+Math.round(rs.slingDamage);d.stones.textContent='돌 '+Math.floor(rs.stones);
     if(rs.shield>0){d.shield.style.display='';d.shield.textContent='보호막 '+rs.shield;}else d.shield.style.display='none';
     d.wolves.textContent=rs.wolves;d.score.textContent=rs.score;
-    const pct=Math.min(100,rs.progress/DATA.level.length*100);d.prog.style.width=pct+'%';d.progBear.style.left=pct+'%';
+    const pct=Math.min(100,rs.progress/this.stage.length*100);d.prog.style.width=pct+'%';d.progBear.style.left=pct+'%';
     if(rs.combo>1){d.combo.classList.remove('hidden');d.combo.textContent='콤보 x'+rs.combo;}else d.combo.classList.add('hidden');
-    if(this.boss&&this.boss.alive){d.bossCard.style.display='block';d.bossFill.style.width=Math.max(0,this.boss.hp/this.boss.maxHp*100)+'%';d.bossLabel.textContent='곰   '+Math.max(0,Math.ceil(this.boss.hp))+' / '+this.boss.maxHp;}
+    if(this.boss&&this.boss.alive){d.bossCard.style.display='block';d.bossFill.style.width=Math.max(0,this.boss.hp/this.boss.maxHp*100)+'%';d.bossLabel.textContent=(this.boss.d.label||'곰')+'   '+Math.max(0,Math.ceil(this.boss.hp))+' / '+this.boss.maxHp;}
     else d.bossCard.style.display='none';}
 
   // ============================ RENDER =============================
@@ -718,7 +781,8 @@ class Game{
     if(w.elite){const cp=this.project(X,1.02,Z);if(cp){ctx.fillStyle='#ffce3a';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.font='900 '+Math.max(11,0.34*cp.scale)+'px system-ui';ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=3;ctx.fillText('★',cp.x,cp.y);ctx.shadowBlur=0;}}
     this.hpTag(ctx,X,1.3*S,Z,w.hp,w.maxHp,w.elite);}
   draw_boss(ctx,b){if(this.drawSprite('boss',b))return;const X=this.wx3(b.x),Z=this.wz3(b.worldY),charging=b.state==='windup'||b.state==='charge';this.shadow(ctx,X,Z,0.95);
-    const lite=b.flash>0?'#ffd9b0':'#9a6a40',base=b.flash>0?'#ffd9b0':'#6a4528';
+    const col=b.d.col||{base:'#6a4528',lite:'#9a6a40'};
+    const lite=b.flash>0?'#ffd9b0':col.lite,base=b.flash>0?'#ffd9b0':col.base;
     // ears
     this.part(ctx,X-0.6,1.75,Z,0.3,base,lite);this.part(ctx,X+0.6,1.75,Z,0.3,base,lite);
     this.part(ctx,X-0.6,1.78,Z+0.05,0.15,'#4a3018','#6a4528');this.part(ctx,X+0.6,1.78,Z+0.05,0.15,'#4a3018','#6a4528');
