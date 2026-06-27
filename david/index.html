@@ -97,6 +97,19 @@
   .stageBtn .tag{font-size:11px;font-weight:800;letter-spacing:.06em;color:#ffe06a;opacity:.95;}
   .stageBtn.locked{opacity:.45;cursor:not-allowed;}
   .stageBtn.locked:hover{transform:none;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);}
+  /* achievements screen */
+  #achCard{position:relative;display:flex;flex-direction:column;align-items:center;width:88%;max-width:360px;max-height:84%;
+    background:linear-gradient(180deg,rgba(28,38,30,.97),rgba(18,26,20,.97));border:1px solid rgba(255,255,255,.14);
+    border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  #achCard h2{font-size:22px;color:#fff;margin-bottom:12px;}
+  .achList{width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:7px;}
+  .achRow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);color:#9aa7a0;font-size:14px;font-weight:700;}
+  .achRow.got{background:rgba(120,200,120,.12);border-color:rgba(150,220,150,.35);color:#eafce0;}
+  .achRow .aic{font-size:15px;flex:0 0 auto;}
+  .achRow .alb{flex:1 1 auto;text-align:left;}
+  .achRow .apg{font-size:12px;color:#ffe06a;font-weight:800;}
+  #walletLine{font-size:15px;color:#ffe7a0;margin-top:14px;letter-spacing:.02em;}
 </style>
 </head>
 <body>
@@ -137,7 +150,18 @@
       <div class="swLabel">화면 톤</div>
       <div class="swatchRow" id="titleSwatches"></div>
       <div class="hint">드래그 · A/D · ← →  로 이동 · P 일시정지</div>
+      <div class="hint" id="walletLine"></div>
+      <button id="achBtn" class="fxToggle" style="margin-top:6px">🏅 업적</button>
       <div class="hint" id="bestLine"></div>
+    </div>
+  </div>
+
+  <div id="achScreen" class="overlay hidden">
+    <div class="scrim"></div>
+    <div id="achCard" class="panelbox">
+      <h2 id="achHdr">업적</h2>
+      <div id="achList" class="achList"></div>
+      <button class="play" id="achClose" style="margin-top:14px">닫기</button>
     </div>
   </div>
 
@@ -157,6 +181,7 @@
     <div id="resultCard">
       <div id="resultBody"></div>
       <button class="play" id="againBtn">다시 하기</button>
+      <button id="menuBtn" class="fxToggle" style="margin-top:10px">← 스테이지 선택</button>
     </div>
   </div>
 </div></div>
@@ -177,9 +202,15 @@ const DATA = {
   wolf:{hp:30,damage:1,radius:13,contact:30}, bear:{hp:1050,radius:44,moveSpeed:92,approach:62,charge:380,chargeCD:1.35,windup:0.45,contact:60,dmg:2,sheepHit:2,armor:0.42},
   rewards:{base:{coins:50,chapter_points:1,unlock_tokens:0},perStar:{coins:25,chapter_points:1},three:{coins:50,unlock_tokens:1},perWolf:{coins:3},perSheep:{coins:2}},
   rewardLabel:{coins:'코인',chapter_points:'챕터 포인트',unlock_tokens:'해금 토큰'},
-  achievements:[ {id:'save_10_sheep',label:'양 10마리 지키기',c:s=>s.sheepSaved>=10},{id:'defeat_30_wolves',label:'늑대 30마리 처치',c:s=>s.wolves>=30},
+  // c:(runStats, save)->bool. Optional prog:(save)->"x / y" for the screen.
+  achievements:[ {id:'save_10_sheep',label:'양 10마리 지키기',c:s=>s.sheepSaved>=10},{id:'defeat_30_wolves',label:'한 판에 늑대 30마리 처치',c:s=>s.wolves>=30},
     {id:'clear_without_losing_sheep',label:'양 한 마리도 잃지 않고 클리어',c:s=>s.win&&s.sheepLost<=0},{id:'defeat_bear_boss',label:'곰 보스 처치',c:s=>s.win},
-    {id:'collect_100_stones',label:'돌 100개 모으기',c:s=>s.stones>=100} ],
+    {id:'collect_100_stones',label:'한 판에 돌 100개 모으기',c:s=>s.stones>=100},
+    {id:'flawless',label:'무피해 클리어',c:s=>s.win&&s.hp>=s.maxHp},
+    {id:'clear_all_stages',label:'모든 스테이지 클리어',c:(s,sv)=>STAGES.every(st=>sv.stagesCleared.includes(st.id)),prog:sv=>sv.stagesCleared.filter(id=>STAGES.some(s=>s.id===id)).length+' / '+STAGES.length},
+    {id:'rich_1000',label:'코인 1000 모으기 (누적)',c:(s,sv)=>sv.totals.coinsEarned>=1000,prog:sv=>Math.min(sv.totals.coinsEarned,1000)+' / 1000'},
+    {id:'wolfbane_100',label:'늑대 100마리 처치 (누적)',c:(s,sv)=>sv.totals.wolves>=100,prog:sv=>Math.min(sv.totals.wolves,100)+' / 100'},
+    {id:'veteran_10',label:'10회 승리 (누적)',c:(s,sv)=>sv.totals.wins>=10,prog:sv=>Math.min(sv.totals.wins,10)+' / 10'} ],
   stars:{three:{sheep:0.8,hp:0.5},two:{sheep:0.5,hp:0},one:{sheep:0,hp:0}},
 };
 
@@ -272,6 +303,31 @@ const POST = {
   reduced: { grade:0.5, vignette:0.8, bloom:0.0,  motes:0,  rim:0.4, fog:0.6, grain:0.0 },
   // parallax layer scroll rates vs worldY (far->near) and silhouette heights
   parallax:[{rate:0.018,h:34,amp:10},{rate:0.044,h:24,amp:13},{rate:0.085,h:16,amp:9}],
+};
+
+// --------------------------- SAVE STATE ------------------------------
+// One JSON blob in localStorage('david3d_save'). Wallet/achievements/cleared
+// stages/best-per-stage/settings persist across runs. Schema is merged against
+// defaults on load (forward-compatible) and legacy single-key saves migrate in.
+const SAVE_KEY='david3d_save';
+const Save={ data:null,
+  _def(){return {v:1, wallet:{coins:0,chapter_points:0,unlock_tokens:0}, achievementsUnlocked:[], stagesCleared:[],
+    bestPerStage:{}, best:0, settings:{palette:null,fx:true}, owned:{shepherds:['david'],gates:[]}, equipped:{shepherd:'david'},
+    totals:{coinsEarned:0,cpEarned:0,tokensEarned:0,wolves:0,sheepSaved:0,runs:0,wins:0}};},
+  _merge(def,d){const o=Object.assign({},def,d);
+    o.wallet=Object.assign({},def.wallet,d.wallet||{});o.settings=Object.assign({},def.settings,d.settings||{});
+    o.totals=Object.assign({},def.totals,d.totals||{});o.owned=Object.assign({},def.owned,d.owned||{});
+    o.equipped=Object.assign({},def.equipped,d.equipped||{});o.bestPerStage=Object.assign({},d.bestPerStage||{});
+    o.achievementsUnlocked=Array.isArray(d.achievementsUnlocked)?d.achievementsUnlocked:[];
+    o.stagesCleared=Array.isArray(d.stagesCleared)?d.stagesCleared:[];return o;},
+  _migrate(d){try{const best=+(localStorage.getItem('david3d_best')||0);if(best)d.best=best;
+    const pal=localStorage.getItem('david3d_palette');if(pal)d.settings.palette=pal;
+    const fx=localStorage.getItem('david3d_fx');if(fx!=null)d.settings.fx=fx!=='0';
+    const st=JSON.parse(localStorage.getItem('david3d_stages')||'[]');if(Array.isArray(st)&&st.length)d.stagesCleared=st;}catch(e){}},
+  load(){let d=null;try{d=JSON.parse(localStorage.getItem(SAVE_KEY));}catch(e){}
+    if(!d||typeof d!=='object'){d=this._def();this._migrate(d);}else d=this._merge(this._def(),d);
+    this.data=d;this.save();return d;},
+  save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.data));}catch(e){}},
 };
 
 // Roguelike gate pool. Each run draws balanced pairs from this. `cat` keeps a
@@ -391,11 +447,12 @@ class RunState{constructor(stage){const s=(stage&&stage.stats)||BASE_STATS;const
 // ============================== GAME =================================
 class Game{
   constructor(){this.canvas=document.getElementById('game');this.ctx=this.canvas.getContext('2d');this.audio=A;this.particles=new Particles();
-    this.shakeT=0;this.shakeMag=0;this.flashT=0;this.flashCol='#fff';this.floaters=[];this.best=+(localStorage.getItem('david3d_best')||0);
+    this.shakeT=0;this.shakeMag=0;this.flashT=0;this.flashCol='#fff';this.floaters=[];
+    this.save=Save.load();this.best=this.save.best||0;
     // user-picked tone overrides the stage biome when set; else stage decides
-    this.userPal=localStorage.getItem('david3d_palette');if(this.userPal&&!PALETTES[this.userPal])this.userPal=null;
-    this.stages=STAGES;this.stagesCleared=this.loadCleared();this.curStageIdx=0;this.stage=STAGES[0];this.refreshPalette();
-    this.fxOn=localStorage.getItem('david3d_fx')!=='0';this.motes=[];
+    this.userPal=this.save.settings.palette;if(this.userPal&&!PALETTES[this.userPal])this.userPal=null;
+    this.stages=STAGES;this.stagesCleared=this.save.stagesCleared;this.curStageIdx=0;this.stage=STAGES[0];this.refreshPalette();
+    this.fxOn=this.save.settings.fx!==false;this.motes=[];
     this.bloom=document.createElement('canvas');this.bloom.width=Math.round(VW*0.5);this.bloom.height=Math.round(VH*0.5);this.bctx=this.bloom.getContext('2d');
     this.paused=false;this.prevStatus=null;
     this.titleT=0;this.input=new Input(this);
@@ -406,7 +463,9 @@ class Game{
       resultBody:document.getElementById('resultBody'),best:document.getElementById('bestLine'),mute:document.getElementById('mute'),
       pauseBtn:document.getElementById('pauseBtn'),pauseScreen:document.getElementById('pauseScreen'),
       titleSw:document.getElementById('titleSwatches'),pauseSw:document.getElementById('pauseSwatches'),
-      stageSel:document.getElementById('stageSelect'),subtitle:document.getElementById('subtitle')};
+      stageSel:document.getElementById('stageSelect'),subtitle:document.getElementById('subtitle'),
+      wallet:document.getElementById('walletLine'),achScreen:document.getElementById('achScreen'),
+      achList:document.getElementById('achList'),achHdr:document.getElementById('achHdr')};
     this.resize();window.addEventListener('resize',()=>this.resize());
     const sbtn=document.getElementById('startBtn');if(sbtn)sbtn.addEventListener('click',()=>this.start(this.curStageIdx));
     document.getElementById('againBtn').addEventListener('click',()=>this.start(this.curStageIdx));
@@ -414,7 +473,10 @@ class Game{
     if(this.dom.pauseBtn)this.dom.pauseBtn.addEventListener('click',()=>this.togglePause());
     const rb=document.getElementById('resumeBtn');if(rb)rb.addEventListener('click',()=>this.resume());
     this.dom.fxBtn=document.getElementById('fxBtn');if(this.dom.fxBtn){this.dom.fxBtn.addEventListener('click',()=>this.toggleFx());this.updateFxLabel();}
-    this.buildPaletteUI();this.buildStageUI();
+    const ab=document.getElementById('achBtn');if(ab)ab.addEventListener('click',()=>this.openAch());
+    const ac=document.getElementById('achClose');if(ac)ac.addEventListener('click',()=>this.closeAch());
+    const mb=document.getElementById('menuBtn');if(mb)mb.addEventListener('click',()=>this.toTitle());
+    this.buildPaletteUI();this.buildStageUI();this.updateWallet();
     if(this.best>0)this.dom.best.textContent='최고 점수: '+this.best;
     this.initRun();}
 
@@ -424,13 +486,12 @@ class Game{
     b.style.background=p.swatch;b.innerHTML='<span>'+p.name+'</span>';
     b.addEventListener('click',()=>this.setPalette(id));host.appendChild(b);}};
     make(this.dom.titleSw);make(this.dom.pauseSw);}
-  setPalette(id){if(!PALETTES[id])return;this.userPal=id;try{localStorage.setItem('david3d_palette',id);}catch(e){}this.refreshPalette();}
+  setPalette(id){if(!PALETTES[id])return;this.userPal=id;this.save.settings.palette=id;Save.save();this.refreshPalette();}
   // active palette = user override if chosen, else the current stage's biome
   refreshPalette(){this.palId=(this.userPal&&PALETTES[this.userPal])?this.userPal:this.stage.palette;this.pal=PALETTES[this.palId];this.highlightSwatch();}
   highlightSwatch(){if(!this.dom)return;for(const host of [this.dom.titleSw,this.dom.pauseSw]){if(!host)continue;for(const b of host.children)b.classList.toggle('on',b.dataset.pal===this.palId);}}
   // ---- stage unlock state (stage 4 will fold this into the full save) ----
-  loadCleared(){try{const v=JSON.parse(localStorage.getItem('david3d_stages')||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
-  saveCleared(){try{localStorage.setItem('david3d_stages',JSON.stringify(this.stagesCleared));}catch(e){}}
+  saveCleared(){Save.save();}
   stageUnlocked(i){if(REVIEW_UNLOCK_ALL)return true;return i===0||this.stagesCleared.includes(STAGES[i-1].id);}
   buildStageUI(){const host=this.dom.stageSel;if(!host)return;host.innerHTML='';
     STAGES.forEach((s,i)=>{const open=this.stageUnlocked(i),cleared=this.stagesCleared.includes(s.id);
@@ -439,7 +500,24 @@ class Game{
         '<span class="nm">'+s.name+'</span>'+
         '<span class="tag">'+(open?(cleared?'★ 클리어':'PLAY'):'🔒')+'</span>';
       if(open)b.addEventListener('click',()=>this.start(i));host.appendChild(b);});}
-  toggleFx(){this.fxOn=!this.fxOn;try{localStorage.setItem('david3d_fx',this.fxOn?'1':'0');}catch(e){}this.updateFxLabel();}
+  // ---- wallet + achievements screen ----
+  updateWallet(){if(!this.dom||!this.dom.wallet)return;const w=this.save.wallet;
+    this.dom.wallet.innerHTML='🪙 '+w.coins+'   📖 '+w.chapter_points+'   🔑 '+w.unlock_tokens;}
+  renderAch(){if(!this.dom.achList)return;const sv=this.save;let h='';
+    for(const a of DATA.achievements){const got=sv.achievementsUnlocked.includes(a.id);
+      const pr=a.prog?'<span class="apg">'+a.prog(sv)+'</span>':'';
+      h+='<div class="achRow'+(got?' got':'')+'"><span class="aic">'+(got?'✓':'🔒')+'</span><span class="alb">'+a.label+'</span>'+pr+'</div>';}
+    const done=sv.achievementsUnlocked.filter(id=>DATA.achievements.some(a=>a.id===id)).length;
+    if(this.dom.achHdr)this.dom.achHdr.textContent='업적  '+done+' / '+DATA.achievements.length;
+    this.dom.achList.innerHTML=h;}
+  openAch(){this.renderAch();if(this.dom.achScreen){this.dom.achScreen.classList.remove('hidden');this.dom.achScreen.classList.add('show');}}
+  closeAch(){if(this.dom.achScreen){this.dom.achScreen.classList.add('hidden');this.dom.achScreen.classList.remove('show');}}
+  // back to the title/stage-select from the result screen
+  toTitle(){this.paused=false;this.rs.status='ready';this.buildStageUI();this.updateWallet();
+    this.dom.result.classList.add('hidden');this.dom.result.classList.remove('show');
+    this.dom.hud.classList.add('hidden');
+    this.dom.start.classList.remove('hidden');this.dom.start.classList.add('show');}
+  toggleFx(){this.fxOn=!this.fxOn;this.save.settings.fx=this.fxOn;Save.save();this.updateFxLabel();}
   updateFxLabel(){if(this.dom&&this.dom.fxBtn)this.dom.fxBtn.textContent=this.fxOn?'✨ 이펙트: 가득':'🔅 이펙트: 줄임';}
   togglePause(){if(this.paused)this.resume();else this.pause();}
   pause(){if(this.paused)return;const s=this.rs.status;if(s!=='running'&&s!=='boss')return;this.paused=true;this.prevStatus=s;
@@ -584,17 +662,26 @@ class Game{
     let reason='';if(!real){this.audio.lose();this.player.dead=true;this.player.deadT=0;this.flash('rgba(150,20,20,.55)',.5);this.shake(9,.4);
       reason=this.boss?'곰에게 당하고 말았습니다!':'다윗이 쓰러졌습니다!';}
     let stars=0;if(real){const t=this.stage.stars;if(rs.sheepRatio>=t.three.sheep&&rs.hpRatio>=t.three.hp)stars=3;else if(rs.sheepRatio>=t.two.sheep)stars=2;else stars=1;}
-    const stats={sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,win:real,stones:Math.floor(rs.stonesCollected),sheepLost:rs.sheepLost,hp:rs.hp};
+    const stats={sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,win:real,stones:Math.floor(rs.stonesCollected),sheepLost:rs.sheepLost,hp:rs.hp,maxHp:rs.maxHp};
     const R=DATA.rewards,mult=this.stage.rewardMult||1,rw={coins:0,chapter_points:0,unlock_tokens:0},add=o=>{for(const k in o)rw[k]=(rw[k]||0)+o[k];};
     if(stars>0){add(R.base);for(let i=0;i<stars;i++)add(R.perStar);if(stars>=3)add(R.three);}
     rw.coins+=R.perWolf.coins*rs.wolves+R.perSheep.coins*rs.sheep+rs.bonusCoins;
     rw.coins=Math.round(rw.coins*mult);rw.chapter_points=Math.round(rw.chapter_points*mult);
-    const ach=DATA.achievements.filter(a=>{try{return a.c(stats)}catch(e){return false}});
-    rs.score+=stars*250+rs.sheep*20;if(rs.score>this.best){this.best=rs.score;localStorage.setItem('david3d_best',this.best);}
-    // mark stage cleared (sequential unlock data); next stage opens when flag is off
-    let nextName=null;if(real){if(!this.stagesCleared.includes(this.stage.id)){this.stagesCleared.push(this.stage.id);this.saveCleared();this.buildStageUI();}
+    rs.score+=stars*250+rs.sheep*20;
+    // ---- persist: best, bank wallet, totals, cleared stage, achievements ----
+    const sv=this.save;if(rs.score>this.best)this.best=rs.score;sv.best=this.best;
+    const bps=sv.bestPerStage;if(!bps[this.stage.id]||rs.score>bps[this.stage.id])bps[this.stage.id]=rs.score;
+    sv.wallet.coins+=rw.coins;sv.wallet.chapter_points+=rw.chapter_points;sv.wallet.unlock_tokens+=rw.unlock_tokens;
+    sv.totals.coinsEarned+=rw.coins;sv.totals.cpEarned+=rw.chapter_points;sv.totals.tokensEarned+=rw.unlock_tokens;
+    sv.totals.runs++;sv.totals.wolves+=rs.wolves;sv.totals.sheepSaved+=rs.sheep;if(real)sv.totals.wins++;
+    let nextName=null;if(real){if(!this.stagesCleared.includes(this.stage.id)){this.stagesCleared.push(this.stage.id);this.buildStageUI();}
       const ni=this.curStageIdx+1;if(STAGES[ni])nextName=STAGES[ni].name;}
-    this.result={win:real,stars,reason,sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,bossDefeated:rs.bossDefeated,rewards:rw,ach,score:rs.score,stageName:this.stage.name,nextName};
+    // evaluate achievements AFTER totals/cleared update; persist only new unlocks
+    const satisfied=DATA.achievements.filter(a=>{try{return a.c(stats,sv)}catch(e){return false}});
+    const newly=satisfied.filter(a=>!sv.achievementsUnlocked.includes(a.id));
+    for(const a of newly)sv.achievementsUnlocked.push(a.id);
+    Save.save();this.updateWallet();
+    this.result={win:real,stars,reason,sheepSaved:rs.sheep,initialSheep:rs.initialSheep,wolves:rs.wolves,bossDefeated:rs.bossDefeated,rewards:rw,ach:newly,score:rs.score,stageName:this.stage.name,nextName};
     this.showResult();}
 
   showResult(){const r=this.result;let h='<h1>'+(r.win?'승리!':'패배...')+'</h1>';
@@ -607,7 +694,7 @@ class Game{
     h+='<div class="stat" style="font-weight:800;color:#ffe06a">점수: '+r.score+'</div>';
     h+='<div class="sec" style="color:#ffe7a0">보상</div>';
     for(const k in r.rewards){if(r.rewards[k]>0)h+='<div class="rewards">'+DATA.rewardLabel[k]+': +'+r.rewards[k]+'</div>';}
-    if(r.ach.length){h+='<div class="sec" style="color:#a0d8ff">업적 달성</div>';for(const a of r.ach)h+='<div class="ach">✓ '+a.label+'</div>';}
+    if(r.ach.length){h+='<div class="sec" style="color:#a0d8ff">🆕 신규 업적!</div>';for(const a of r.ach)h+='<div class="ach">✓ '+a.label+'</div>';}
     if(r.win&&r.nextName)h+='<div class="ach" style="color:#ffe7a0;margin-top:8px">다음 스테이지: '+r.nextName+'</div>';
     this.dom.resultBody.innerHTML=h;this.dom.result.className='overlay show'+(r.win?' win':' lose');}
 
