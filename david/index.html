@@ -1071,9 +1071,5 @@ const game=new Game();window.__game=game;
 let last=0;function frame(t){if(!last)last=t;let dt=(t-last)/1000;last=t;if(dt>0.05)dt=0.05;game.update(dt);game.render();requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
 </script>
-<!-- Cloudflare Web Analytics — 메인 페이지와 동일한 token 사용 -->
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
-  data-cf-beacon='{"token": "YOUR_CLOUDFLARE_TOKEN"}'></script>
-<!-- End Cloudflare Web Analytics -->
 </body>
 </html>

@@ -244,6 +244,8 @@ button{ font-family:inherit; }
 .footer__in{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; }
 .footer a:hover{ color:var(--ink); }
 .footer__en{ font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; }
+.footer__visits{ font-family:var(--font-mono); font-size:12px; letter-spacing:.03em; color:var(--ink-2); }
+.footer__visits b{ color:var(--accent); font-weight:700; }
 
 /* ===== 테마 선택 (구석 메뉴) ===== */
 .themer{ position:fixed; right:16px; bottom:16px; z-index:40; }
@@ -390,6 +392,7 @@ button{ font-family:inherit; }
 <footer class="footer">
   <div class="wrap footer__in">
     <span>© 2026 ELIUD GAMES</span>
+    <span class="footer__visits" id="visits" hidden>오늘 방문 <b>—</b>명</span>
     <span><a href="mailto:studioeliud@gmail.com">studioeliud@gmail.com</a></span>
     <span class="footer__en">games.eliud.co.kr</span>
   </div>
@@ -491,11 +494,32 @@ button{ font-family:inherit; }
   });
 </script>
 
-<!-- Cloudflare Web Analytics -->
-<!-- 1) https://dash.cloudflare.com → Analytics & Logs → Web Analytics → Add a site
-     2) games.eliud.co.kr 추가 후 발급된 token을 아래 YOUR_CLOUDFLARE_TOKEN 자리에 붙여넣기 -->
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
-  data-cf-beacon='{"token": "YOUR_CLOUDFLARE_TOKEN"}'></script>
-<!-- End Cloudflare Web Analytics -->
+<!-- ===== 오늘 고유 방문자 카운터 =====
+     무료 카운터 API(abacus) + 날짜별 키 + localStorage로 "하루 1회/브라우저"만 집계.
+     한국시간(KST) 자정에 자동으로 0부터 새로 시작. 서버 불필요. -->
+<script>
+(function(){
+  var NS = 'eliud-games-kr-v1';                 // 사이트 식별용 네임스페이스
+  var API = 'https://abacus.jasoncameron.dev';
+  var el = document.getElementById('visits');
+  if(!el) return;
+  var out = el.querySelector('b');
+  // KST 기준 오늘 날짜 (YYYY-MM-DD)
+  var day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+  var flag = 'eliud-visit-' + day;              // 이 브라우저가 오늘 이미 셌는지
+  var counted = false;
+  try { counted = !!localStorage.getItem(flag); } catch(e){}
+  // 오늘 처음이면 +1(hit), 이미 셌으면 값만 읽기(get)
+  var url = API + (counted ? '/get/' : '/hit/') + NS + '/' + day;
+  fetch(url).then(function(r){ return r.json(); }).then(function(d){
+    if(d && typeof d.value === 'number'){
+      out.textContent = d.value.toLocaleString('ko-KR');
+      el.hidden = false;
+      if(!counted){ try{ localStorage.setItem(flag,'1'); }catch(e){} }
+    }
+  }).catch(function(){ /* 실패 시 조용히 숨김 유지 */ });
+})();
+</script>
+<!-- ===== /방문자 카운터 ===== -->
 </body>
 </html>
