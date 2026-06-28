@@ -490,5 +490,12 @@ button{ font-family:inherit; }
     img.src = src;
   });
 </script>
+
+<!-- Cloudflare Web Analytics -->
+<!-- 1) https://dash.cloudflare.com → Analytics & Logs → Web Analytics → Add a site
+     2) games.eliud.co.kr 추가 후 발급된 token을 아래 YOUR_CLOUDFLARE_TOKEN 자리에 붙여넣기 -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+  data-cf-beacon='{"token": "YOUR_CLOUDFLARE_TOKEN"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </body>
 </html>
