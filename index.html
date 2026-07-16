@@ -199,10 +199,12 @@ button{ font-family:inherit; }
 .game--dungeon .game__art{ background-image:var(--dungeon-grad); }
 .game--david .game__art{ background-image:var(--david-grad); }
 .game--kdemon .game__art{ background-image:var(--kdemon-grad); }
-.game__body{ display:flex; align-items:center; gap:14px; padding:16px 18px; }
+.game__body{ display:flex; flex:1; flex-direction:column; align-items:stretch; gap:16px; padding:18px; }
+.game__copy{ flex:1; }
 .game__body h3{ margin:0; font-family:var(--font-display); font-weight:600;
-  font-size:21px; line-height:1.1; flex:1; }
-.game__body .btn{ min-height:46px; padding:11px 20px; white-space:nowrap; }
+  font-size:21px; line-height:1.15; }
+.game__body p{ margin:9px 0 0; color:var(--ink-2); font-size:14.5px; line-height:1.55; }
+.game__body .btn{ align-self:flex-start; min-height:46px; padding:11px 20px; white-space:nowrap; }
 
 /* ===== 푸터 ===== */
 .footer{ padding:26px 0 36px; border-top:1px solid var(--line);
@@ -295,7 +297,10 @@ button{ font-family:inherit; }
             <div class="ph"><b>🎒</b>game-dungeon.svg</div>
           </a>
           <div class="game__body">
-            <h3>Dungeon Backpackers</h3>
+            <div class="game__copy">
+              <h3>Dungeon Backpackers</h3>
+              <p>가방 칸에 장비를 배치·조합하고, 갈림길과 자동 전투를 돌파하는 인벤토리 전략 RPG.</p>
+            </div>
             <a class="btn btn--play" href="https://studioeliud.github.io/Dungeon-Backpackers/" target="_blank" rel="noopener">▶ 플레이</a>
           </div>
         </article>
@@ -305,7 +310,10 @@ button{ font-family:inherit; }
             <div class="ph"><b>🐑</b>game-david.png</div>
           </a>
           <div class="game__body">
-            <h3>David the Shepherd</h3>
+            <div class="game__copy">
+              <h3>David the Shepherd</h3>
+              <p>양치기 다윗이 양 떼를 지키며 달리고, 돌팔매로 거대한 야수를 상대하는 3D 러너 액션.</p>
+            </div>
             <a class="btn btn--play" href="david/">▶ 플레이</a>
           </div>
         </article>
@@ -315,7 +323,10 @@ button{ font-family:inherit; }
             <div class="ph"><b>👹</b>game-kdemon.png</div>
           </a>
           <div class="game__body">
-            <h3>K-Demon Chaser</h3>
+            <div class="game__copy">
+              <h3>K-Demon Chaser</h3>
+              <p>같은 색 오브를 연결해 공격·방어·회복을 만들고, 유물을 쌓아 대악귀를 추격하는 배틀 퍼즐 로그라이크.</p>
+            </div>
             <a class="btn btn--warm" href="https://calmrice3.itch.io/k-demon-chaser" target="_blank" rel="noopener">▶ 플레이</a>
           </div>
         </article>
