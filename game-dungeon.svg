@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-labelledby="title desc">
+  <title id="title">Dungeon Backpackers dungeon artwork</title>
+  <desc id="desc">A backpack before a torch-lit stone dungeon gate</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1118"/>
+      <stop offset="1" stop-color="#211b15"/>
+    </linearGradient>
+    <radialGradient id="light" cx="50%" cy="38%" r="60%">
+      <stop offset="0" stop-color="#d9953d" stop-opacity=".35"/>
+      <stop offset=".55" stop-color="#7a4c23" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bag" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#c58a46"/>
+      <stop offset="1" stop-color="#6f4324"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+  <rect width="960" height="640" fill="url(#bg)"/>
+  <rect width="960" height="640" fill="url(#light)"/>
+  <g fill="#172029" stroke="#34404a" stroke-width="6">
+    <path d="M110 520V205Q110 70 245 70h470q135 0 135 135v315h-95V218q0-65-65-65H270q-65 0-65 65v302z"/>
+    <path d="M290 520V292q0-190 190-190t190 190v228z" fill="#0c1116"/>
+  </g>
+  <g stroke="#59616a" stroke-width="4" opacity=".5">
+    <path d="M110 242h95M755 242h95M110 332h95M755 332h95M110 422h95M755 422h95"/>
+    <path d="M176 153v67M784 153v67M140 287h65M755 287h65M140 377h65M755 377h65"/>
+    <path d="M334 196l292 0M307 274h346M292 356h376M290 438h380"/>
+  </g>
+  <g>
+    <circle cx="220" cy="290" r="56" fill="#f59f38" opacity=".22" filter="url(#glow)"/>
+    <circle cx="740" cy="290" r="56" fill="#f59f38" opacity=".22" filter="url(#glow)"/>
+    <path d="M220 306c-19-22-13-42 2-59 1 16 13 20 12 35 9-9 11-20 8-30 20 19 19 43-22 54z" fill="#ffad3d"/>
+    <path d="M740 306c-19-22-13-42 2-59 1 16 13 20 12 35 9-9 11-20 8-30 20 19 19 43-22 54z" fill="#ffad3d"/>
+    <path d="M198 314h44l-7 18h-30zM718 314h44l-7 18h-30z" fill="#5b4431"/>
+  </g>
+  <path d="M0 520h960v120H0z" fill="#12171b"/>
+  <g stroke="#30363b" stroke-width="4" opacity=".7">
+    <path d="M0 560h960M0 610h960"/>
+    <path d="M80 520l-20 120M220 520l-8 120M360 520l-3 120M600 520l3 120M740 520l8 120M880 520l20 120"/>
+  </g>
+  <g transform="translate(390 304)">
+    <path d="M28 106V52q0-52 62-52t62 52v54" fill="none" stroke="#4b2c19" stroke-width="22" stroke-linecap="round"/>
+    <rect x="0" y="60" width="180" height="190" rx="38" fill="url(#bag)" stroke="#3e2618" stroke-width="10"/>
+    <path d="M18 102q72 56 144 0v65H18z" fill="#9a6334" stroke="#4f301d" stroke-width="8"/>
+    <rect x="48" y="150" width="84" height="68" rx="14" fill="#b8783d" stroke="#4f301d" stroke-width="8"/>
+    <path d="M16 76h148M90 16v48" stroke="#dfaa64" stroke-width="8" opacity=".55"/>
+    <circle cx="90" cy="172" r="9" fill="#f0c778"/>
+  </g>
+  <rect x="12" y="12" width="936" height="616" rx="22" fill="none" stroke="#d59a4e" stroke-opacity=".2" stroke-width="4"/>
+</svg>
