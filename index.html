@@ -39,7 +39,7 @@
       "@id": "https://games.eliud.co.kr/#website",
       "url": "https://games.eliud.co.kr/",
       "name": "ELIUD GAMES",
-      "description": "설치 없이 바로 즐기는 무료 싱글플레이 브라우저 게임 모음.",
+      "description": "ELIUD GAMES의 게임을 브라우저에서 플레이할 수 있는 페이지.",
       "inLanguage": "ko-KR",
       "publisher": { "@id": "https://games.eliud.co.kr/#org" }
     },
@@ -54,7 +54,7 @@
     {
       "@type": "VideoGame",
       "name": "Dungeon Backpackers",
-      "url": "https://studioeliud.github.io/Dungeon-Backpackers/",
+      "url": "https://games.eliud.co.kr/dungeon/",
       "image": "https://games.eliud.co.kr/game-dungeon.svg",
       "applicationCategory": "Game",
       "operatingSystem": "Web Browser",
@@ -177,25 +177,52 @@ button{ font-family:inherit; }
 /* ===== 헤더 ===== */
 .topbar{ position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line);
   background:var(--topbar); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
-.topbar__in{ display:flex; align-items:center; min-height:64px; }
+.topbar__in{ display:flex; align-items:center; justify-content:space-between; gap:20px; min-height:64px; }
 .brand{ display:inline-flex; align-items:center; gap:11px; font-weight:800; letter-spacing:.01em; }
 .brand__mark{ display:grid; place-items:center; width:36px; height:36px; border-radius:9px;
   color:#fff; font-family:var(--font-display); font-weight:700; font-size:19px;
   background:var(--mark-grad); box-shadow:var(--shadow-sm); }
+.topbar__meta{ color:var(--ink-2); font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.05em; text-transform:uppercase; }
 /* ===== 섹션 ===== */
-.section{ padding:clamp(52px,8vh,88px) 0; min-height:calc(100vh - 64px); }
+.section{ padding:clamp(42px,6vh,68px) 0 clamp(64px,9vh,96px); min-height:calc(100vh - 64px); }
 .section__head{ margin-bottom:clamp(22px,3vh,30px); }
 .section__head h1{ margin:0; font-family:var(--font-display); font-weight:600;
   font-size:clamp(28px,3.8vw,42px); line-height:1.05; letter-spacing:-.015em; }
+.section__head--sub{ display:flex; align-items:end; justify-content:space-between; gap:20px;
+  margin-top:clamp(52px,7vh,76px); }
+.section__head--sub h2{ margin:0; font-family:var(--font-display); font-weight:600;
+  font-size:clamp(24px,3vw,34px); line-height:1.1; }
+.section__count{ color:var(--ink-3); font-family:var(--font-mono); font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; }
 
-/* ===== 게임 카드 (미니멀) ===== */
-.games{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(16px,2.4vw,22px); }
+/* ===== 최신 게임 ===== */
+.featured{ min-width:0; display:grid; grid-template-columns:minmax(0,1.65fr) minmax(310px,.8fr); overflow:hidden;
+  border:1px solid var(--line); border-radius:calc(var(--radius) + 4px); background:var(--card);
+  box-shadow:var(--shadow); }
+.featured__art{ min-height:clamp(360px,47vw,540px); background-image:var(--dungeon-grad); }
+.featured__body{ display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+  min-width:0; padding:clamp(28px,4vw,46px); }
+.eyebrow{ display:inline-flex; align-items:center; gap:8px; margin-bottom:18px;
+  color:var(--accent); font-family:var(--font-mono); font-size:11px; font-weight:700;
+  letter-spacing:.11em; text-transform:uppercase; }
+.eyebrow::before{ content:""; width:7px; height:7px; border-radius:50%; background:currentColor;
+  box-shadow:0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent); }
+.featured h2{ margin:0; font-family:var(--font-display); font-size:clamp(31px,4vw,48px);
+  font-weight:600; line-height:1.04; letter-spacing:-.025em; }
+.featured p{ margin:18px 0 0; color:var(--ink-2); font-size:16px; line-height:1.68; }
+.meta{ display:flex; flex-wrap:wrap; gap:8px; margin:22px 0 28px; }
+.meta span{ padding:6px 10px; border:1px solid var(--line); border-radius:999px;
+  color:var(--ink-2); font-family:var(--font-mono); font-size:10.5px; letter-spacing:.03em; }
+
+/* ===== 다른 게임 ===== */
+.games{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(16px,2.4vw,22px); }
 .game{ position:relative; display:flex; flex-direction:column; overflow:hidden;
   border:1px solid var(--line); border-radius:var(--radius); background:var(--card);
   box-shadow:var(--shadow-sm);
   transition:transform .18s ease, box-shadow .22s ease, border-color .18s ease; }
 .game:hover{ transform:translateY(-5px); box-shadow:var(--shadow); border-color:var(--line-2); }
-.game__art{ display:block; aspect-ratio:3/2; }
+.game__art{ display:block; aspect-ratio:16/9; }
 .game--dungeon .game__art{ background-image:var(--dungeon-grad); }
 .game--david .game__art{ background-image:var(--david-grad); }
 .game--kdemon .game__art{ background-image:var(--kdemon-grad); }
@@ -204,6 +231,7 @@ button{ font-family:inherit; }
 .game__body h3{ margin:0; font-family:var(--font-display); font-weight:600;
   font-size:21px; line-height:1.15; }
 .game__body p{ margin:9px 0 0; color:var(--ink-2); font-size:14.5px; line-height:1.55; }
+.game .meta{ margin:15px 0 0; }
 .game__body .btn{ align-self:flex-start; min-height:46px; padding:11px 20px; white-space:nowrap; }
 
 /* ===== 푸터 ===== */
@@ -259,11 +287,15 @@ button{ font-family:inherit; }
 
 /* ===== 반응형 ===== */
 @media (max-width:860px){
-  .games{ grid-template-columns:1fr; }
+  .featured{ grid-template-columns:minmax(0,1fr); }
+  .featured__art{ min-height:0; aspect-ratio:16/10; }
 }
 @media (max-width:560px){
   .wrap{ width:min(100% - 28px, var(--maxw)); }
-  .nav{ display:none; }
+  .topbar__meta{ display:none; }
+  .games{ grid-template-columns:1fr; }
+  .featured__body{ padding:25px 22px 28px; }
+  .featured p{ font-size:15px; }
   .themer{ right:12px; bottom:12px; }
   .swatch{ width:28px; height:28px; }
 }
@@ -280,6 +312,7 @@ button{ font-family:inherit; }
       <span class="brand__mark">E</span>
       <span class="brand__txt">ELIUD GAMES</span>
     </a>
+    <span class="topbar__meta">3개 게임 · 브라우저 플레이</span>
   </div>
 </header>
 
@@ -289,22 +322,30 @@ button{ font-family:inherit; }
   <section class="section" id="games">
     <div class="wrap">
       <div class="section__head">
-        <h1>지금 플레이</h1>
+        <h1>최신 게임</h1>
+      </div>
+      <article class="featured game--dungeon">
+        <a class="art featured__art" href="dungeon/" data-src="game-dungeon.svg" role="img" aria-label="Dungeon Backpackers 던전 키 아트">
+          <div class="ph"><b>🎒</b>Dungeon Backpackers</div>
+        </a>
+        <div class="featured__body">
+          <span class="eyebrow">Latest</span>
+          <h2>Dungeon<br />Backpackers</h2>
+          <p>가방 칸에 장비를 배치·조합하고, 갈림길과 자동 전투를 돌파하는 인벤토리 전략 RPG.</p>
+          <div class="meta" aria-label="게임 정보">
+            <span>인벤토리 전략 RPG</span>
+            <span>브라우저</span>
+            <span>싱글플레이</span>
+          </div>
+          <a class="btn btn--play" href="dungeon/">▶ 브라우저에서 플레이</a>
+        </div>
+      </article>
+
+      <div class="section__head section__head--sub">
+        <h2>다른 게임</h2>
+        <span class="section__count">2 games</span>
       </div>
       <div class="games">
-        <article class="game game--dungeon">
-          <a class="art game__art" href="https://studioeliud.github.io/Dungeon-Backpackers/" target="_blank" rel="noopener" data-src="game-dungeon.svg" role="img" aria-label="Dungeon Backpackers 던전 키 아트">
-            <div class="ph"><b>🎒</b>game-dungeon.svg</div>
-          </a>
-          <div class="game__body">
-            <div class="game__copy">
-              <h3>Dungeon Backpackers</h3>
-              <p>가방 칸에 장비를 배치·조합하고, 갈림길과 자동 전투를 돌파하는 인벤토리 전략 RPG.</p>
-            </div>
-            <a class="btn btn--play" href="https://studioeliud.github.io/Dungeon-Backpackers/" target="_blank" rel="noopener">▶ 플레이</a>
-          </div>
-        </article>
-
         <article class="game game--david">
           <a class="art game__art" href="david/" data-src="game-david.png" role="img" aria-label="David the Shepherd 키 아트">
             <div class="ph"><b>🐑</b>game-david.png</div>
@@ -313,8 +354,9 @@ button{ font-family:inherit; }
             <div class="game__copy">
               <h3>David the Shepherd</h3>
               <p>양치기 다윗이 양 떼를 지키며 달리고, 돌팔매로 거대한 야수를 상대하는 3D 러너 액션.</p>
+              <div class="meta"><span>3D 러너 액션</span><span>브라우저</span></div>
             </div>
-            <a class="btn btn--play" href="david/">▶ 플레이</a>
+            <a class="btn btn--play" href="david/">▶ 브라우저에서 플레이</a>
           </div>
         </article>
 
@@ -326,8 +368,9 @@ button{ font-family:inherit; }
             <div class="game__copy">
               <h3>K-Demon Chaser</h3>
               <p>같은 색 오브를 연결해 공격·방어·회복을 만들고, 유물을 쌓아 대악귀를 추격하는 배틀 퍼즐 로그라이크.</p>
+              <div class="meta"><span>배틀 퍼즐 로그라이크</span><span>itch.io</span></div>
             </div>
-            <a class="btn btn--warm" href="https://calmrice3.itch.io/k-demon-chaser" target="_blank" rel="noopener">▶ 플레이</a>
+            <a class="btn btn--warm" href="https://calmrice3.itch.io/k-demon-chaser" target="_blank" rel="noopener">▶ itch.io에서 플레이</a>
           </div>
         </article>
       </div>
