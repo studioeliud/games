@@ -54,16 +54,18 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/WebGL.loader.js";
+      var buildVersion = "20260716-d497228";
+      var buildQuery = "?v=" + encodeURIComponent(buildVersion);
+      var loaderUrl = buildUrl + "/WebGL.loader.js" + buildQuery;
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/WebGL.data.unityweb",
-        frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
-        codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+        dataUrl: buildUrl + "/WebGL.data.unityweb" + buildQuery,
+        frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb" + buildQuery,
+        codeUrl: buildUrl + "/WebGL.wasm.unityweb" + buildQuery,
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "Dungeon Backpackers",
-        productVersion: "1.0",
+        productVersion: buildVersion,
         showBanner: unityShowBanner,
         // errorHandler: function(err, url, line) {
         //    alert("error " + err + " occurred at line " + line);
