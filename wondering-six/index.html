@@ -110,7 +110,7 @@
       }
 
       var buildUrl = "Build";
-      var buildVersion = "20260729-215427";
+      var buildVersion = "20260729-222335";
       var buildQuery = "?v=" + encodeURIComponent(buildVersion);
       var loaderUrl = buildUrl + "/WebGL.loader.js" + buildQuery;
       var config = {
@@ -151,7 +151,10 @@
         // Mobile device style: fill the whole browser client area with the game canvas:
         document.querySelector("#unity-container").className = "unity-mobile";
         canvas.className = "unity-mobile";
-        config.devicePixelRatio = 1;
+        config.devicePixelRatio = Math.min(
+          Math.max(window.devicePixelRatio || 1, 1.25),
+          1.5
+        );
       } else {
         canvas.style.width = "100%";
         canvas.style.height = "100%";
