@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>ELIUD GAMES — 지금 플레이</title>
-<meta name="description" content="Dungeon Backpackers, David the Shepherd, K-Demon Chaser를 바로 플레이하세요." />
-<meta name="keywords" content="브라우저 게임, 웹게임, 인디게임, Dungeon Backpackers, David the Shepherd, K-Demon Chaser, ELIUD GAMES" />
+<meta name="description" content="The Wondering Six, Dungeon Backpackers, David the Shepherd, K-Demon Chaser를 바로 플레이하세요." />
+<meta name="keywords" content="브라우저 게임, 웹게임, 인디게임, The Wondering Six, Dungeon Backpackers, David the Shepherd, K-Demon Chaser, ELIUD GAMES" />
 <meta name="author" content="ELIUD GAMES" />
 <meta name="theme-color" content="#0d1426" />
 <link rel="canonical" href="https://games.eliud.co.kr/" />
@@ -20,15 +20,15 @@
 <meta property="og:url" content="https://games.eliud.co.kr/" />
 <meta property="og:site_name" content="ELIUD GAMES" />
 <meta property="og:locale" content="ko_KR" />
-<meta property="og:image" content="https://games.eliud.co.kr/game-dungeon.svg" />
+<meta property="og:image" content="https://games.eliud.co.kr/game-wondering-six.png" />
 <meta property="og:image:width" content="960" />
 <meta property="og:image:height" content="540" />
-<meta property="og:image:alt" content="Dungeon Backpackers 던전 키 아트" />
+<meta property="og:image:alt" content="The Wondering Six 키 아트" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="ELIUD GAMES — 지금 플레이" />
 <meta name="twitter:description" content="ELIUD GAMES의 게임을 선택하고 바로 플레이하세요." />
-<meta name="twitter:image" content="https://games.eliud.co.kr/game-dungeon.svg" />
+<meta name="twitter:image" content="https://games.eliud.co.kr/game-wondering-six.png" />
 
 <script type="application/ld+json">
 {
@@ -50,6 +50,17 @@
       "url": "https://games.eliud.co.kr/",
       "email": "studioeliud@gmail.com",
       "logo": "https://games.eliud.co.kr/hero-field-dawn.png"
+    },
+    {
+      "@type": "VideoGame",
+      "name": "The Wondering Six",
+      "url": "https://games.eliud.co.kr/wondering-six/",
+      "image": "https://games.eliud.co.kr/game-wondering-six.png",
+      "applicationCategory": "Game",
+      "operatingSystem": "Web Browser",
+      "gamePlatform": "Web Browser",
+      "publisher": { "@id": "https://games.eliud.co.kr/#org" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" }
     },
     {
       "@type": "VideoGame",
@@ -110,6 +121,7 @@
   --line-2:  color-mix(in srgb, var(--ink) 24%, transparent);
   --topbar:  color-mix(in srgb, var(--bg) 80%, transparent);
   --mark-grad:   linear-gradient(140deg, var(--accent-deep), var(--accent2));
+  --wondering-grad:linear-gradient(160deg, #31452f, #141a23);
   --dungeon-grad:linear-gradient(160deg, #493822, #111820);
   --david-grad:  linear-gradient(160deg, var(--accent), var(--accent2));
   --kdemon-grad: linear-gradient(160deg, var(--accent-deep), var(--accent2-deep));
@@ -200,7 +212,7 @@ button{ font-family:inherit; }
 .featured{ min-width:0; display:grid; grid-template-columns:minmax(0,1.65fr) minmax(310px,.8fr); overflow:hidden;
   border:1px solid var(--line); border-radius:calc(var(--radius) + 4px); background:var(--card);
   box-shadow:var(--shadow); }
-.featured__art{ min-height:clamp(360px,47vw,540px); background-image:var(--dungeon-grad); }
+.featured__art{ min-height:clamp(360px,47vw,540px); background-image:var(--wondering-grad); }
 .featured__body{ display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
   min-width:0; padding:clamp(28px,4vw,46px); }
 .eyebrow{ display:inline-flex; align-items:center; gap:8px; margin-bottom:18px;
@@ -223,6 +235,7 @@ button{ font-family:inherit; }
   transition:transform .18s ease, box-shadow .22s ease, border-color .18s ease; }
 .game:hover{ transform:translateY(-5px); box-shadow:var(--shadow); border-color:var(--line-2); }
 .game__art{ display:block; aspect-ratio:16/9; }
+.game--wondering .game__art{ background-image:var(--wondering-grad); }
 .game--dungeon .game__art{ background-image:var(--dungeon-grad); }
 .game--david .game__art{ background-image:var(--david-grad); }
 .game--kdemon .game__art{ background-image:var(--kdemon-grad); }
@@ -312,7 +325,7 @@ button{ font-family:inherit; }
       <span class="brand__mark">E</span>
       <span class="brand__txt">ELIUD GAMES</span>
     </a>
-    <span class="topbar__meta">3개 게임 · 브라우저 플레이</span>
+    <span class="topbar__meta">4개 게임 · 브라우저 플레이</span>
   </div>
 </header>
 
@@ -324,28 +337,42 @@ button{ font-family:inherit; }
       <div class="section__head">
         <h1>최신 게임</h1>
       </div>
-      <article class="featured game--dungeon">
-        <a class="art featured__art" href="dungeon/" data-src="game-dungeon.svg" role="img" aria-label="Dungeon Backpackers 던전 키 아트">
-          <div class="ph"><b>🎒</b>Dungeon Backpackers</div>
+      <article class="featured game--wondering">
+        <a class="art featured__art" href="wondering-six/" data-src="game-wondering-six.png" role="img" aria-label="The Wondering Six 키 아트">
+          <div class="ph"><b>⚔️</b>The Wondering Six</div>
         </a>
         <div class="featured__body">
-          <span class="eyebrow">Latest Update</span>
-          <h2>Dungeon<br />Backpackers</h2>
-          <p>가방에 장비를 배치·조합하고 파티 진형과 직업 승급을 다듬어, 갈림길과 자동 전투를 돌파하는 인벤토리 전략 RPG.</p>
+          <span class="eyebrow">New Web Build</span>
+          <h2>The Wondering<br />Six</h2>
+          <p>선두를 따라 자연스럽게 진형을 갖추는 용병대를 이끌고, 동료별 액티브 스킬과 성장 보상으로 몰려드는 적을 돌파하는 파티 서바이버.</p>
           <div class="meta" aria-label="게임 정보">
-            <span>인벤토리 전략 RPG</span>
+            <span>파티 서바이버</span>
             <span>브라우저</span>
-            <span>파티 진형 · 직업 승급</span>
+            <span>용병 영입 · 진형 · 성장</span>
           </div>
-          <a class="btn btn--play" href="dungeon/">▶ 브라우저에서 플레이</a>
+          <a class="btn btn--play" href="wondering-six/">▶ 브라우저에서 플레이</a>
         </div>
       </article>
 
       <div class="section__head section__head--sub">
         <h2>다른 게임</h2>
-        <span class="section__count">2 games</span>
+        <span class="section__count">3 games</span>
       </div>
       <div class="games">
+        <article class="game game--dungeon">
+          <a class="art game__art" href="dungeon/" data-src="game-dungeon.svg" role="img" aria-label="Dungeon Backpackers 던전 키 아트">
+            <div class="ph"><b>🎒</b>Dungeon Backpackers</div>
+          </a>
+          <div class="game__body">
+            <div class="game__copy">
+              <h3>Dungeon Backpackers</h3>
+              <p>가방에 장비를 배치·조합하고 파티 진형과 직업 승급을 다듬어 갈림길과 자동 전투를 돌파하는 인벤토리 전략 RPG.</p>
+              <div class="meta"><span>인벤토리 전략 RPG</span><span>브라우저</span></div>
+            </div>
+            <a class="btn btn--play" href="dungeon/">▶ 브라우저에서 플레이</a>
+          </div>
+        </article>
+
         <article class="game game--david">
           <a class="art game__art" href="david/" data-src="game-david.png" role="img" aria-label="David the Shepherd 키 아트">
             <div class="ph"><b>🐑</b>game-david.png</div>
