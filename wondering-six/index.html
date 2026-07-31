@@ -106,10 +106,7 @@
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         document.querySelector("#unity-container").className = "unity-mobile";
         canvas.className = "unity-mobile";
-        config.devicePixelRatio = Math.min(
-          Math.max(window.devicePixelRatio || 1, 1.25),
-          1.5
-        );
+        config.devicePixelRatio = window.devicePixelRatio || 1;
       } else {
         canvas.style.width = "100%";
         canvas.style.height = "100%";
