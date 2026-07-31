@@ -46,26 +46,10 @@
         text-decoration: none;
       }
       #back-home:hover { color: #fff; border-color: rgba(255,255,255,.45); }
-      #rotate-hint {
-        position: fixed;
-        inset: 0;
-        z-index: 50;
-        display: grid;
-        place-items: center;
-        padding: 24px;
-        color: #fff;
-        background: #080d14;
-        font: 700 18px/1.5 system-ui, sans-serif;
-        text-align: center;
-      }
-      @media (orientation: landscape) {
-        #rotate-hint { display: none; }
-      }
     </style>
   </head>
   <body>
     <a id="back-home" href="../" aria-label="ELIUD GAMES 홈으로">← ELIUD GAMES</a>
-    <div id="rotate-hint">가로 화면으로 돌려서 플레이해 주세요.</div>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
