@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>ELIUD GAMES — 지금 플레이</title>
-<meta name="description" content="The Wondering Six, Dungeon Backpackers, David the Shepherd, K-Demon Chaser를 바로 플레이하세요." />
+<meta name="description" content="The Wondering Six, Dungeon Backpackers, David the Shepherd, K-Demon Chaser, 성벽 마법사를 바로 플레이하세요." />
 <meta name="keywords" content="브라우저 게임, 웹게임, 인디게임, The Wondering Six, Dungeon Backpackers, David the Shepherd, K-Demon Chaser, ELIUD GAMES" />
 <meta name="author" content="ELIUD GAMES" />
 <meta name="theme-color" content="#0d1426" />
@@ -94,6 +94,17 @@
       "gamePlatform": "Web Browser",
       "publisher": { "@id": "https://games.eliud.co.kr/#org" },
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "VideoGame",
+      "name": "성벽 마법사",
+      "url": "https://games.eliud.co.kr/citadel-mage/",
+      "image": "https://games.eliud.co.kr/citadel-mage/assets/cover.webp",
+      "applicationCategory": "Game",
+      "operatingSystem": "Web Browser",
+      "gamePlatform": "Web Browser",
+      "publisher": { "@id": "https://games.eliud.co.kr/#org" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" }
     }
   ]
 }
@@ -239,6 +250,7 @@ button{ font-family:inherit; }
 .game--dungeon .game__art{ background-image:var(--dungeon-grad); }
 .game--david .game__art{ background-image:var(--david-grad); }
 .game--kdemon .game__art{ background-image:var(--kdemon-grad); }
+.game--citadel .game__art{ background-image:linear-gradient(160deg,#493d2e,#181f17); }
 .game__body{ display:flex; flex:1; flex-direction:column; align-items:stretch; gap:16px; padding:18px; }
 .game__copy{ flex:1; }
 .game__body h3{ margin:0; font-family:var(--font-display); font-weight:600;
@@ -325,7 +337,7 @@ button{ font-family:inherit; }
       <span class="brand__mark">E</span>
       <span class="brand__txt">ELIUD GAMES</span>
     </a>
-    <span class="topbar__meta">4개 게임 · 브라우저 플레이</span>
+    <span class="topbar__meta">5개 게임 · 브라우저 플레이</span>
   </div>
 </header>
 
@@ -356,9 +368,23 @@ button{ font-family:inherit; }
 
       <div class="section__head section__head--sub">
         <h2>다른 게임</h2>
-        <span class="section__count">3 games</span>
+        <span class="section__count">4 games</span>
       </div>
       <div class="games">
+        <article class="game game--citadel">
+          <a class="art game__art" href="citadel-mage/" data-src="citadel-mage/assets/cover.webp" aria-label="성벽 마법사 플레이">
+            <div class="ph">성벽 마법사</div>
+          </a>
+          <div class="game__body">
+            <div class="game__copy">
+              <h3>성벽 마법사</h3>
+              <p>주문을 바꾸고 마나를 관리하며, 카드로 병력을 모아 합성하세요. 거신 오우거 왕을 물리쳐 숲의 관문을 지키는 성벽 디펜스.</p>
+              <div class="meta"><span>성벽 디펜스</span><span>브라우저</span><span>모바일 세로</span></div>
+            </div>
+            <a class="btn btn--play" href="citadel-mage/">▶ 브라우저에서 플레이</a>
+          </div>
+        </article>
+
         <article class="game game--dungeon">
           <a class="art game__art" href="dungeon/" data-src="game-dungeon.svg" role="img" aria-label="Dungeon Backpackers 던전 키 아트">
             <div class="ph"><b>🎒</b>Dungeon Backpackers</div>
