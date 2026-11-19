@@ -1,0 +1,104 @@
+{
+  "goblin": [
+    {
+      "skeleton": "Goblin_warrior/Mon_Goblin_warrior.json",
+      "atlas": "Goblin_warrior/Mon_Goblin_warrior.atlas"
+    },
+    {
+      "skeleton": "Goblin_archer/Mon_Goblin_archer.json",
+      "atlas": "Goblin_archer/Mon_Goblin_archer.atlas"
+    }
+  ],
+  "skeleton": [
+    {
+      "skeleton": "Skeleton_warrior/Mon_Skeleton_warrior.json",
+      "atlas": "Skeleton_warrior/Mon_Skeleton_warrior.atlas"
+    },
+    {
+      "skeleton": "Skeleton_archer/Mon_Skeleton_archer.json",
+      "atlas": "Skeleton_archer/Mon_Skeleton_archer.atlas"
+    },
+    {
+      "skeleton": "Davyjones/Mon_Davyjones.json",
+      "atlas": "Davyjones/Mon_Davyjones.atlas"
+    }
+  ],
+  "orc": [
+    {
+      "skeleton": "Golem/Mon_Golem.json",
+      "atlas": "Golem/Mon_Golem.atlas"
+    },
+    {
+      "skeleton": "Tree/Mon_Tree.json",
+      "atlas": "Tree/Mon_Tree.atlas"
+    },
+    {
+      "skeleton": "Cactus/Mon_Cactus.json",
+      "atlas": "Cactus/Mon_Cactus.atlas"
+    },
+    {
+      "skeleton": "Sharkman/Mon_Sharkman.json",
+      "atlas": "Sharkman/Mon_Sharkman.atlas"
+    }
+  ],
+  "ward": [
+    {
+      "skeleton": "Goblin_wizard/Mon_Goblin_wizard.json",
+      "atlas": "Goblin_wizard/Mon_Goblin_wizard.atlas"
+    },
+    {
+      "skeleton": "Skeleton_wizard/Mon_Skeleton_wizard.json",
+      "atlas": "Skeleton_wizard/Mon_Skeleton_wizard.atlas"
+    },
+    {
+      "skeleton": "Treespirit/Mon_Treespirit.json",
+      "atlas": "Treespirit/Mon_Treespirit.atlas"
+    },
+    {
+      "skeleton": "Seed/Mon_Seed.json",
+      "atlas": "Seed/Mon_Seed.atlas"
+    },
+    {
+      "skeleton": "Mushroom/Mon_Mushroom.json",
+      "atlas": "Mushroom/Mon_Mushroom.atlas"
+    }
+  ],
+  "runner": [
+    {
+      "skeleton": "Spider/Mon_Spider.json",
+      "atlas": "Spider/Mon_Spider.atlas"
+    },
+    {
+      "skeleton": "Bee/Mon_Bee.json",
+      "atlas": "Bee/Mon_Bee.atlas"
+    },
+    {
+      "skeleton": "Scorpion/Mon_Scorpion.json",
+      "atlas": "Scorpion/Mon_Scorpion.atlas"
+    },
+    {
+      "skeleton": "Slime/Mon_Slime.json",
+      "atlas": "Slime/Mon_Slime.atlas"
+    },
+    {
+      "skeleton": "Hornslime/Mon_Hornslime.json",
+      "atlas": "Hornslime/Mon_Hornslime.atlas"
+    },
+    {
+      "skeleton": "Warriorslime/Mon_Warriorslime.json",
+      "atlas": "Warriorslime/Mon_Warriorslime.atlas"
+    }
+  ],
+  "boss-armored": {
+    "skeleton": "Armoredsoldier/Mon_Armoredsoldier.json",
+    "atlas": "Armoredsoldier/Mon_Armoredsoldier.atlas"
+  },
+  "boss-water": {
+    "skeleton": "Waterspirit_boss/Mon_Waterspirit_boss.json",
+    "atlas": "Waterspirit_boss/Mon_Waterspirit_boss.atlas"
+  },
+  "boss-slime": {
+    "skeleton": "Kingslime/Mon_Kingslime.json",
+    "atlas": "Kingslime/Mon_Kingslime.atlas"
+  }
+}

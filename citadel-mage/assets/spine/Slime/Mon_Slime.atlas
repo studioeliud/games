@@ -1,0 +1,12 @@
+Mon_Slime.png
+size:256,198
+filter:Linear,Linear
+pma:true
+body
+bounds:2,2,194,159
+offsets:0,0,195,159
+rotate:90
+shadow
+bounds:163,8,188,91
+offsets:7,3,203,101
+rotate:90

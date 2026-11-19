@@ -1,0 +1,27 @@
+Mon_Mushroom.png
+size:161,291
+filter:Linear,Linear
+pma:true
+arm_l
+bounds:77,254,35,39
+offsets:2,1,38,42
+rotate:90
+arm_r
+bounds:118,254,35,41
+offsets:1,1,37,43
+rotate:90
+body
+bounds:2,2,179,156
+offsets:1,1,181,158
+rotate:90
+leg_ l
+bounds:2,264,25,35
+offsets:2,1,29,37
+rotate:90
+leg_r
+bounds:39,262,27,36
+offsets:1,1,29,39
+rotate:90
+shadow
+bounds:2,183,132,69
+offsets:6,3,143,78
