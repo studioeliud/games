@@ -1,5 +1,12 @@
 # Notices
 
+The additional ground effects and spell icons are rendered from
+[PixelFX at 5294518](https://github.com/patch-gg/pixelfx/tree/5294518ce7c72e48b6100a744596e0acf57f2826)
+under the accompanying MIT license. The frost ring adapts the palette and ground-plane angle of
+`water/ripples`. Additional effects were rendered against transparent
+backgrounds at 24 fps and packed into sprite atlases. The matching icons
+are cropped frames from the same effects.
+
 **Hugo Duprez.** `src/core/sim.js` and the effects that say so at the top of their file adapt Sprite Fusion's
 open-source pixel art VFX (https://www.spritefusion.com/pixel-art-vfx), Copyright (c) 2026 Hugo Duprez, MIT License.
 
