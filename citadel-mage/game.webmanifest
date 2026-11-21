@@ -1,0 +1,17 @@
+{
+  "name": "성벽 마법사",
+  "short_name": "성벽 마법사",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#171d18",
+  "background_color": "#10141f",
+  "icons": [
+    {
+      "src": "./assets/cover.webp",
+      "sizes": "1000x1000",
+      "type": "image/webp"
+    }
+  ]
+}
