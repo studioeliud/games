@@ -7,6 +7,9 @@ under the accompanying MIT license. The frost ring adapts the palette and ground
 backgrounds at 24 fps and packed into sprite atlases. The matching icons
 are cropped frames from the same effects.
 
+`coin-collect-burst.png` and `coin-collect-token.png` adapt the same revision's
+`ui/coin-collect` preset. The flight and counter use the game's Gold HUD.
+
 **Hugo Duprez.** `src/core/sim.js` and the effects that say so at the top of their file adapt Sprite Fusion's
 open-source pixel art VFX (https://www.spritefusion.com/pixel-art-vfx), Copyright (c) 2026 Hugo Duprez, MIT License.
 
