@@ -10,6 +10,10 @@ are cropped frames from the same effects.
 `coin-collect-burst.png` and `coin-collect-token.png` adapt the same revision's
 `ui/coin-collect` preset. The flight and counter use the game's Gold HUD.
 
+The hex spell board executes 57 presets from the same revision in the browser.
+`scripts/build-hex-fx.mjs` selects the modules from the spell catalog and bundles
+them with the PixelFX renderer. The spell preview and combat share these modules.
+
 **Hugo Duprez.** `src/core/sim.js` and the effects that say so at the top of their file adapt Sprite Fusion's
 open-source pixel art VFX (https://www.spritefusion.com/pixel-art-vfx), Copyright (c) 2026 Hugo Duprez, MIT License.
 
