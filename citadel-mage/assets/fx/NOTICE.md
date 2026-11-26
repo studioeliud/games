@@ -7,6 +7,8 @@ under the accompanying MIT license. The frost ring adapts the palette and ground
 backgrounds at 24 fps and packed into sprite atlases. The matching icons
 are cropped frames from the same effects.
 The basic fire attack uses the burning atlas from the PixelFX status/burning preset.
+The Ice Bolt chill atlas uses the ground frost from status/frozen and the mist from ice/frost-breath.
+scripts/build-ice-bolt-fx.mjs renders those layers from the pinned revision.
 
 `coin-collect-burst.png` and `coin-collect-token.png` adapt the same revision's
 `ui/coin-collect` preset. The flight and counter use the game's Gold HUD.
