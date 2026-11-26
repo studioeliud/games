@@ -6,11 +6,12 @@ under the accompanying MIT license. The frost ring adapts the palette and ground
 `water/ripples`. Additional effects were rendered against transparent
 backgrounds at 24 fps and packed into sprite atlases. The matching icons
 are cropped frames from the same effects.
+The basic fire attack uses the burning atlas from the PixelFX status/burning preset.
 
 `coin-collect-burst.png` and `coin-collect-token.png` adapt the same revision's
 `ui/coin-collect` preset. The flight and counter use the game's Gold HUD.
 
-The hex spell board executes 57 presets from the same revision in the browser.
+Combat runs 61 presets from the same revision in the browser, including ui/damage-number and ui/crit-number.
 `scripts/build-hex-fx.mjs` selects the modules from the spell catalog and bundles
 them with the PixelFX renderer. The spell preview and combat share these modules.
 
