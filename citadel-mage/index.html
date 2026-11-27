@@ -1,7 +1,54 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#171d18"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="./game.webmanifest"><link rel="apple-touch-icon" href="./assets/cover.webp"><link rel="icon" type="image/webp" href="./assets/cover.webp"><title>성벽 마법사</title>  <script type="module" crossorigin src="./assets/index-BFzBkyQm.js"></script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171d18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="./game.webmanifest">
+  <link rel="apple-touch-icon" href="./assets/cover.webp">
+  <link rel="icon" type="image/webp" href="./assets/cover.webp">
+  <title>성벽 마법사</title>
+  <style>
+    body { margin: 0; }
+    #startup { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 38%, #2b2637, #161922 68%); color: #e4d8bd; }
+    #startup [hidden], #startup[hidden] { display: none; }
+    .startup-card { width: min(340px, 86vw); padding: 20px; box-sizing: border-box; border: 1px solid #8d7657; border-radius: 10px; background: #201e29; text-align: center; }
+    #startup-title { margin: 0 0 14px; font: inherit; font-size: 1.4rem; letter-spacing: .05em; color: #e3cba3; }
+    #startup-status { margin: 10px 0 0; color: #c5b79e; font-size: .86rem; line-height: 1.5; }
+    #startup-progress { width: 100%; height: 13px; accent-color: #c8a470; vertical-align: middle; }
+    #startup-percent { display: block; min-height: 1.2em; margin-top: 3px; color: #d6be97; font-size: .78rem; font-variant-numeric: tabular-nums; }
+    #startup-retry { margin-top: 12px; padding: 6px 12px; border: 1px solid #97774e; border-radius: 6px; background: #3b3025; color: inherit; font: inherit; }
+  </style>
+  <script type="module" crossorigin src="./assets/index-jW80UOvQ.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/phaser-DXXWZowi.js">
   <link rel="modulepreload" crossorigin href="./assets/phaser-ClC-AZlK.js">
-  <link rel="stylesheet" crossorigin href="./assets/index-CuQUo-h4.css">
-</head><body><div id="app"></div>  <small id="build-number">빌드 112711</small>
-</body></html>
+  <link rel="stylesheet" crossorigin href="./assets/index-DRXyobdh.css">
+</head>
+<body>
+  <div id="app" inert aria-busy="true"></div>
+  <section id="startup" aria-labelledby="startup-title">
+    <div class="startup-card">
+      <h1 id="startup-title">성벽 마법사</h1>
+      <div id="startup-meter">
+        <progress id="startup-progress" max="100" aria-label="초기 파일 다운로드"></progress>
+        <span id="startup-percent" aria-hidden="true"></span>
+      </div>
+      <p id="startup-status" role="status">게임 파일을 불러오는 중</p>
+      <button id="startup-retry" type="button" hidden>다시 불러오기</button>
+    </div>
+  </section>
+  <script>
+    const startupRetry = document.getElementById('startup-retry')
+    startupRetry.addEventListener('click', () => location.reload())
+    window.addEventListener('error', event => {
+      if (!(event.target instanceof HTMLScriptElement) || event.target.type !== 'module' ||
+          document.getElementById('startup').hidden) return
+      document.getElementById('startup-meter').hidden = true
+      document.getElementById('startup-status').textContent = '게임 파일을 불러오지 못했습니다.'
+      startupRetry.hidden = false
+    }, true)
+  </script>
+  <small id="build-number">빌드 112715</small>
+</body>
+</html>
